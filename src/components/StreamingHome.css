@@ -1,4 +1,4 @@
-/* Anime Tracker — identidade visual premium com preto, grafite e laranja. */
+/* Fable — identidade laranja: carvão, grafite e laranja. */
 /* Todos os seletores do componente possuem o prefixo at- para evitar conflitos. */
 
 body:has(.at-shell) {
@@ -20,8 +20,8 @@ body:has(.at-shell) {
   box-sizing: border-box;
 }
 .at-shell {
-  --at-accent: #ff5d22;
-  --at-accent-2: #ff8533;
+  --at-accent: #ffa34e;
+  --at-accent-2: #ffaa5c;
   --at-bg: #0b0b0d;
   --at-text: #f7f7f8;
   --at-muted: #a1a1ac;
@@ -31,7 +31,7 @@ body:has(.at-shell) {
   background:
     radial-gradient(
       ellipse 45% 21% at 86% 0%,
-      rgba(195, 50, 0, 0.08),
+      rgba(195, 114, 39, 0.08),
       transparent
     ),
     var(--at-bg);
@@ -51,7 +51,7 @@ body:has(.at-shell) {
   text-decoration: none;
 }
 .at-shell :is(button, a):focus-visible {
-  outline: 2px solid #ff9e75;
+  outline: 2px solid #ffc691;
   outline-offset: 4px;
 }
 .at-shell button:disabled {
@@ -83,14 +83,14 @@ body:has(.at-shell) {
   width: 40px;
   height: 42px;
   border-radius: 12px;
-  color: #100d0b;
+  color: #0f0f10;
   font-size: 26px;
   font-weight: 1000;
   font-style: italic;
   letter-spacing: -0.12em;
   padding-right: 4px;
-  background: linear-gradient(140deg, #ff993c, #ff4b16);
-  box-shadow: 0 6px 26px rgba(255, 88, 20, 0.15);
+  background: linear-gradient(140deg, #ffae63, #ff9e45);
+  box-shadow: 0 6px 26px rgba(255, 157, 67, 0.15);
 }
 .at-brand-copy {
   min-width: 0;
@@ -146,8 +146,8 @@ body:has(.at-shell) {
   color: #fff !important;
 }
 .at-nav-link.at-nav-active {
-  color: #ff864a !important;
-  background: rgba(255, 99, 36, 0.11);
+  color: #ffb36e !important;
+  background: rgba(255, 164, 80, 0.11);
 }
 .at-sidebar-footer {
   display: flex;
@@ -166,8 +166,8 @@ body:has(.at-shell) {
   height: 7px;
   flex: none;
   border-radius: 50%;
-  background: #ff6129;
-  box-shadow: 0 0 0 3px rgba(255, 99, 36, 0.13);
+  background: #ffa654;
+  box-shadow: 0 0 0 3px rgba(255, 164, 80, 0.13);
 }
 
 /* O App antigo aplica limite global de largura a <main>.
@@ -220,7 +220,7 @@ body:has(.at-shell) {
   width: 16px;
 }
 .at-library-link span {
-  color: #ff7a3c;
+  color: #ffae63;
   font-size: 15px;
 }
 
@@ -249,7 +249,7 @@ body:has(.at-shell) {
   padding: 0;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 17px;
-  background: #201411;
+  background: #1e1e20;
   opacity: 0.32;
   filter: saturate(0.64);
   transition:
@@ -286,7 +286,7 @@ body:has(.at-shell) {
   opacity: 0.72;
   filter: saturate(0.95);
   transform: scale(1.015);
-  border-color: rgba(255, 111, 53, 0.5);
+  border-color: rgba(255, 170, 93, 0.5);
 }
 .at-hero-preview-symbol {
   position: absolute;
@@ -316,10 +316,10 @@ body:has(.at-shell) {
   background:
     radial-gradient(
       ellipse at 81% 30%,
-      rgba(255, 102, 30, 0.29),
+      rgba(255, 161, 75, 0.29),
       transparent 41%
     ),
-    linear-gradient(115deg, #24140f, #151316 65%, #1e1110);
+    linear-gradient(115deg, #222224, #151516 65%, #1c1c1e);
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 20px 56px rgba(0, 0, 0, 0.32);
 }
@@ -376,8 +376,8 @@ body:has(.at-shell) {
     border-color 0.2s;
 }
 .at-hero-nav:hover {
-  background: rgba(255, 93, 34, 0.89);
-  border-color: rgba(255, 150, 85, 0.95);
+  background: rgba(255, 163, 78, 0.89);
+  border-color: rgba(255, 184, 119, 0.95);
 }
 .at-hero-nav--previous {
   left: 13px;
@@ -396,15 +396,15 @@ body:has(.at-shell) {
   gap: 10px;
   border-radius: 99px;
   padding: 8px 12px;
-  border: 1px solid rgba(255, 115, 53, 0.28);
-  background: rgba(255, 96, 29, 0.12);
-  color: #ffab76;
+  border: 1px solid rgba(255, 170, 93, 0.28);
+  background: rgba(255, 161, 74, 0.12);
+  color: #ffc691;
   font-weight: 850;
   font-size: 9px;
   letter-spacing: 0.15em;
 }
 .at-hero-kicker {
-  color: #f2b39a;
+  color: #f2cdac;
   margin: 22px 0 7px;
   font-size: 10px;
   font-weight: 800;
@@ -474,19 +474,19 @@ body:has(.at-shell) {
 .at-btn-primary {
   background: var(--at-accent);
   color: #fff;
-  box-shadow: 0 6px 18px rgba(255, 78, 20, 0.16);
+  box-shadow: 0 6px 18px rgba(255, 157, 67, 0.16);
 }
 .at-btn-primary:hover:not(:disabled) {
-  background: #fa7640;
+  background: #faac65;
 }
 .at-btn-outline {
-  background: rgba(28, 27, 30, 0.65);
+  background: rgba(30, 28, 27, 0.65);
   color: #fff;
   border-color: rgba(255, 255, 255, 0.22);
   backdrop-filter: blur(8px);
 }
 .at-btn-outline:hover {
-  background: #29272b;
+  background: #28282b;
 }
 .at-btn svg {
   width: 15px;
@@ -591,7 +591,7 @@ body:has(.at-shell) {
   height: 100%;
   font-size: 13px;
   letter-spacing: 0.17em;
-  color: #f9a476;
+  color: #f9c290;
   font-weight: 900;
 }
 .at-rating {
@@ -618,7 +618,7 @@ body:has(.at-shell) {
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  border: 2px solid #3e312c;
+  border: 2px solid #3a3a3e;
   border-top-color: var(--at-accent);
   animation: at-spin 0.75s linear infinite;
 }
@@ -632,11 +632,11 @@ body:has(.at-shell) {
   flex-wrap: wrap;
 }
 .at-error button {
-  border: 1px solid #6e3524;
+  border: 1px solid #6e4f33;
   border-radius: 7px;
   padding: 9px 15px;
-  background: #2b1916;
-  color: #ff986c;
+  background: #28282b;
+  color: #ffc189;
 }
 
 .at-library-section {
@@ -666,7 +666,7 @@ body:has(.at-shell) {
   font-size: 10px;
 }
 .at-page-footer span {
-  color: #ff6932;
+  color: #ffa95b;
   margin: 0 8px;
 }
 
@@ -686,7 +686,7 @@ body:has(.at-shell) {
   width: min(580px, 100%);
   max-height: min(850px, 92vh);
   overflow-y: auto;
-  border: 1px solid #343035;
+  border: 1px solid #323235;
   border-radius: 17px;
   background: #151518;
   box-shadow: 0 25px 95px rgba(0, 0, 0, 0.55);
@@ -706,7 +706,7 @@ body:has(.at-shell) {
 }
 .at-modal-banner {
   height: 170px;
-  background-color: #2c1714;
+  background-color: #29292c;
   background-position: center;
   background-size: cover;
 }
@@ -722,7 +722,7 @@ body:has(.at-shell) {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  color: #ffbd91;
+  color: #ffd1a7;
   font-size: 11px;
   font-weight: 750;
 }
@@ -737,9 +737,9 @@ body:has(.at-shell) {
   flex-wrap: wrap;
 }
 .at-modal-tags span {
-  border: 1px solid #3a3030;
+  border: 1px solid #37373a;
   border-radius: 99px;
-  background: #231c1e;
+  background: #212123;
   padding: 6px 10px;
   font-size: 10px;
   color: #dfd8d5;
@@ -1011,7 +1011,7 @@ body:has(.at-shell) {
 }
 .at-search-widget.is-open {
   width: clamp(220px, 28vw, 440px);
-  border-color: #434047;
+  border-color: #434347;
   background: #1a1a1e;
 }
 .at-search-trigger {
@@ -1026,7 +1026,7 @@ body:has(.at-shell) {
   color: inherit;
 }
 .at-search-trigger:hover {
-  color: #ff9d69;
+  color: #ffc087;
 }
 .at-search-widget input {
   width: 100%;
@@ -1061,9 +1061,9 @@ body:has(.at-shell) {
   width: min(560px, 100%);
   z-index: 18;
   padding: 18px;
-  border: 1px solid #3e3331;
+  border: 1px solid #3a3a3e;
   border-radius: 14px;
-  background: #171619;
+  background: #171719;
   box-shadow: 0 22px 60px rgba(0, 0, 0, 0.6);
   animation: at-search-reveal 0.2s ease-out both;
 }
@@ -1078,7 +1078,7 @@ body:has(.at-shell) {
   }
 }
 .at-search-caption {
-  color: #f1d5c8;
+  color: #f1e0d0;
   font-size: 13px;
   font-weight: 700;
   margin-bottom: 10px;
@@ -1102,13 +1102,13 @@ body:has(.at-shell) {
   border: 1px solid transparent;
   border-radius: 8px;
   color: #fff;
-  background: #212024;
+  background: #222224;
   text-align: left;
   min-width: 0;
 }
 .at-search-results button:hover {
-  border-color: #ff7549;
-  background: #2b2526;
+  border-color: #ffb36d;
+  background: #28282b;
 }
 .at-search-results img {
   display: block;
@@ -1173,7 +1173,7 @@ body:has(.at-shell) {
   aspect-ratio: 16 / 9;
   overflow: hidden;
   border-radius: 7px;
-  background: #30201c;
+  background: #2d2d30;
   border: 1px solid rgba(255, 255, 255, 0.12);
 }
 .at-continue-image::after {
@@ -1212,7 +1212,7 @@ body:has(.at-shell) {
 .at-continue-progress span {
   display: block;
   height: 100%;
-  background: #ff5e27;
+  background: #ffa552;
 }
 .at-continue-title {
   display: block;
@@ -1236,18 +1236,18 @@ body:has(.at-shell) {
   gap: 14px;
   min-height: 94px;
   padding: 18px 22px;
-  border: 1px dashed #393238;
+  border: 1px dashed #363639;
   border-radius: 10px;
   color: #a7a2a8;
   font-size: 13px;
-  background: linear-gradient(90deg, rgba(255, 103, 40, 0.04), transparent 60%);
+  background: linear-gradient(90deg, rgba(255, 165, 83, 0.04), transparent 60%);
 }
 .at-continue-empty button {
-  border: 1px solid #51403b;
+  border: 1px solid #51483f;
   border-radius: 8px;
   padding: 10px 13px;
-  background: #261d1b;
-  color: #ffac86;
+  background: #242426;
+  color: #ffcc9e;
   font-weight: 700;
   display: flex;
   gap: 9px;
@@ -1255,7 +1255,7 @@ body:has(.at-shell) {
   white-space: nowrap;
 }
 .at-continue-empty button:hover {
-  background: #37231e;
+  background: #343437;
 }
 
 /* Pôsteres maiores, em fileiras que deslizam horizontalmente */
@@ -1288,7 +1288,7 @@ body:has(.at-shell) {
   border-radius: 5px;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  background: #272126;
+  background: #252527;
 }
 .at-poster-art img {
   display: block;
@@ -1300,7 +1300,7 @@ body:has(.at-shell) {
     filter 0.25s ease;
 }
 .at-poster-card:hover .at-poster-art {
-  outline: 2px solid #f67542;
+  outline: 2px solid #f6ab66;
   outline-offset: -2px;
 }
 .at-poster-card:hover img {
@@ -1356,14 +1356,14 @@ body:has(.at-shell) {
   grid-row: 1;
   z-index: 1;
   aspect-ratio: 2 / 3;
-  border-color: #2f2d32;
+  border-color: #2f2f32;
 }
 .at-poster-card--ranked .at-poster-title {
   grid-column: 2;
   grid-row: 2;
 }
 .at-rail-section--ranked .at-poster-card:hover .at-rank-number {
-  -webkit-text-stroke-color: #ff7747;
+  -webkit-text-stroke-color: #ffb26c;
 }
 .at-discover-heading {
   margin-bottom: 34px;
@@ -1520,7 +1520,7 @@ body:has(.at-shell) {
   flex-wrap: wrap;
 }
 .at-streaming-section {
-  border-top: 1px solid #343139;
+  border-top: 1px solid #363639;
   margin-top: 19px;
   padding-top: 4px;
 }
@@ -1545,9 +1545,9 @@ body:has(.at-shell) {
   display: inline-flex;
   gap: 10px;
   align-items: center;
-  border: 1px solid #51413c;
+  border: 1px solid #514840;
   border-radius: 8px;
-  background: #251d1b;
+  background: #232325;
   padding: 10px 12px;
   font-size: 12px;
   font-weight: 700;
@@ -1557,7 +1557,7 @@ body:has(.at-shell) {
     transform 0.18s ease;
 }
 .at-streaming-provider:hover {
-  background: #593022;
+  background: #59422d;
   transform: translateY(-2px);
 }
 
@@ -1703,14 +1703,14 @@ body:has(.at-shell) {
 }
 .at-poster-quick-add:hover,
 .at-poster-quick-add:focus-visible {
-  background: #ff6429;
-  border-color: #ff9f6d;
+  background: #ffa654;
+  border-color: #ffc28a;
   transform: scale(1.12);
   outline-offset: 3px;
 }
 .at-poster-quick-add.is-saved {
-  background: #fe642d;
-  border-color: #ff995d;
+  background: #fea757;
+  border-color: #ffbb7d;
   font-size: 17px;
 }
 .at-quick-menu {
@@ -1720,10 +1720,10 @@ body:has(.at-shell) {
   max-width: calc(100vw - 24px);
   max-height: calc(100dvh - 24px);
   overflow-y: auto;
-  border: 1px solid #4a3931;
+  border: 1px solid #4a4036;
   border-radius: 14px;
   padding: 11px;
-  background: #1b191d;
+  background: #1b1b1d;
   color: #fff;
   box-shadow: 0 20px 60px #000c;
 }
@@ -1755,7 +1755,7 @@ body:has(.at-shell) {
   margin-top: 4px;
   border-radius: 8px;
   border: 1px solid transparent;
-  background: #29252b;
+  background: #28282b;
   color: #fff;
   text-align: left;
   display: flex;
@@ -1764,14 +1764,14 @@ body:has(.at-shell) {
   cursor: pointer;
 }
 .at-quick-menu > button:hover:not(:disabled) {
-  background: #493027;
-  border-color: #ff6429;
+  background: #493b2e;
+  border-color: #ffa654;
 }
 .at-quick-menu > button:disabled {
   opacity: 0.55;
 }
 .at-quick-menu > button span {
-  color: #ff915d;
+  color: #ffbb7d;
 }
 .at-quick-menu small {
   display: block;
@@ -1779,7 +1779,7 @@ body:has(.at-shell) {
   color: #d4cbcf;
 }
 .at-quick-menu .at-quick-error {
-  color: #ffa698;
+  color: #ffd4ad;
 }
 .at-quick-notice {
   position: fixed;
@@ -1807,13 +1807,13 @@ body:has(.at-shell) {
   color: #fff;
   text-align: left;
   cursor: pointer;
-  border: 1px solid #494049;
+  border: 1px solid #494440;
   border-radius: 11px;
-  background: #201f23;
+  background: #212123;
 }
 .at-open-synopsis:hover {
-  border-color: #ff743b;
-  background: #292025;
+  border-color: #ffad62;
+  background: #272729;
 }
 .at-open-synopsis-icon {
   width: 34px;
@@ -1822,8 +1822,8 @@ body:has(.at-shell) {
   display: grid;
   place-items: center;
   border-radius: 9px;
-  color: #ff8d5c;
-  background: #3c2924;
+  color: #ffbb7d;
+  background: #38383c;
 }
 .at-open-synopsis > span:nth-child(2) {
   flex: 1;
@@ -1850,8 +1850,8 @@ body:has(.at-shell) {
   display: grid;
   grid-template-columns: minmax(175px, 31%) minmax(0, 1fr);
   border-radius: 18px;
-  background: #18171b;
-  border: 1px solid #42383d;
+  background: #19191b;
+  border: 1px solid #3e3e42;
   box-shadow: 0 25px 85px #000d;
   position: relative;
   overflow: hidden;
@@ -1859,7 +1859,7 @@ body:has(.at-shell) {
 .at-synopsis-poster {
   align-self: stretch;
   min-height: 400px;
-  background: #272026;
+  background: #252527;
   overflow: hidden;
 }
 .at-synopsis-poster img {
@@ -1882,7 +1882,7 @@ body:has(.at-shell) {
   line-height: 1.2;
 }
 .at-synopsis-content h3 {
-  color: #ff9b68;
+  color: #ffc086;
   font-size: 13px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -1910,20 +1910,20 @@ body:has(.at-shell) {
   height: 36px;
   border-radius: 50%;
   border: 1px solid #ffffff55;
-  background: #0c0b0dd9;
+  background: #0c0c0dd9;
   color: white;
   font-size: 23px;
   cursor: pointer;
 }
 .at-synopsis-close:hover {
-  background: #ff6429;
+  background: #ffa654;
 }
 .at-modal .at-status-panel {
   margin: 12px 0 16px;
   padding: 14px;
-  border: 1px solid #3a3337;
+  border: 1px solid #37373a;
   border-radius: 12px;
-  background: #19181c;
+  background: #1a1a1c;
 }
 .at-modal .at-trailer-actions {
   margin-top: 15px;
@@ -2228,4 +2228,4 @@ body:has(.at-shell) {
   }
 }
 
-.at-search-retry { margin: 0 14px 12px; padding: 8px 12px; border-radius: 7px; background: #ff622b; color: white; font-weight: 700; }
+.at-search-retry { margin: 0 14px 12px; padding: 8px 12px; border-radius: 7px; background: #ffa655; color: white; font-weight: 700; }

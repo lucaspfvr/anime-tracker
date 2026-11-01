@@ -1,4 +1,4 @@
-/* Etapa 5 — cadastro, avatar e perfil, no mesmo tema preto/laranja. */
+/* Etapa 5 — cadastro, avatar e perfil, no mesmo tema laranja. */
 .at-topbar-actions {
   position: relative;
 }
@@ -7,7 +7,7 @@
   height: 39px;
   border-radius: 50%;
   border: 2px solid rgba(255, 255, 255, 0.62);
-  background: linear-gradient(135deg, #ff6b2b, #6d3022);
+  background: linear-gradient(135deg, #ffa655, #6d4e31);
   color: #fff;
   display: grid;
   place-items: center;
@@ -16,7 +16,7 @@
   overflow: hidden;
 }
 .at-avatar-btn:hover {
-  border-color: #ff8b51;
+  border-color: #ffb674;
 }
 .at-user-menu-wrap {
   position: relative;
@@ -70,7 +70,7 @@
 .at-account-dialog {
   position: relative;
   background: #18181c;
-  border: 1px solid #38343a;
+  border: 1px solid #37373a;
   border-radius: 20px;
   padding: clamp(24px, 4vw, 42px);
   width: min(465px, 100%);
@@ -88,7 +88,7 @@
   font-size: 30px;
 }
 .at-account-kicker {
-  color: #ff874b;
+  color: #ffb46f;
   font-size: 10px;
   font-weight: 900;
   letter-spacing: 0.2em;
@@ -108,7 +108,7 @@
 .at-account-tabs {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  border-bottom: 1px solid #454049;
+  border-bottom: 1px solid #494440;
   margin-bottom: 21px;
 }
 .at-account-tabs button {
@@ -121,7 +121,7 @@
 }
 .at-account-tabs button.active {
   color: #fff;
-  border-bottom-color: #ff692e;
+  border-bottom-color: #ffa858;
 }
 .at-account-form,
 .at-profile-edit {
@@ -143,7 +143,7 @@
   min-height: 44px;
   padding: 10px 12px;
   border-radius: 8px;
-  border: 1px solid #45434b;
+  border: 1px solid #4b4743;
   outline: none;
   background: #101013;
   color: #fff;
@@ -152,7 +152,7 @@
 .at-account-form input:focus,
 .at-profile-edit input:focus,
 .at-profile-edit textarea:focus {
-  border-color: #ff823a;
+  border-color: #ffad61;
 }
 .at-account-primary {
   display: inline-flex;
@@ -162,23 +162,23 @@
   padding: 11px 18px;
   border: 0;
   border-radius: 8px;
-  background: #ff622b;
+  background: #ffa655;
   color: #fff;
   font-weight: 850;
 }
 .at-account-primary:hover {
-  background: #ff7d43;
+  background: #ffb169;
 }
 .at-account-ghost {
   min-height: 42px;
   padding: 10px 16px;
-  border: 1px solid #4b454c;
+  border: 1px solid #4c4845;
   border-radius: 8px;
   color: #f4f1f4;
-  background: #1d1c20;
+  background: #1e1e20;
 }
 .at-account-ghost:hover {
-  background: #2b292e;
+  background: #2b2b2e;
 }
 .at-account-info {
   padding: 11px 14px;
@@ -192,8 +192,8 @@
   padding: 11px 14px;
   margin: 10px 0;
   border-radius: 8px;
-  background: #3b1f1c;
-  color: #ffc1ad;
+  background: #37373b;
+  color: #ffddbd;
   overflow-wrap: anywhere;
 }
 .at-profile-page {
@@ -212,9 +212,9 @@
     linear-gradient(12deg, #101012 5%, transparent 77%),
     radial-gradient(
       ellipse at 78% 25%,
-      #ff661d 0%,
-      #7f2917 24%,
-      #222026 66%,
+      #ffa14a 0%,
+      #7f542c 24%,
+      #242426 66%,
       #0d0d10 100%
     );
 }
@@ -229,7 +229,7 @@
   pointer-events: none;
 }
 .at-profile-cover > span {
-  color: #ffb389;
+  color: #ffcea1;
   font-size: 10px;
   font-weight: 900;
   letter-spacing: 0.19em;
@@ -252,7 +252,7 @@
   flex: none;
   border: 5px solid #0c0c0e;
   border-radius: 50%;
-  background: linear-gradient(135deg, #ff8646, #783223);
+  background: linear-gradient(135deg, #ffb26b, #785534);
   font-size: 33px;
   font-weight: 900;
 }
@@ -316,7 +316,7 @@
   display: flex;
   overflow-x: auto;
   gap: 25px;
-  border-bottom: 1px solid #353139;
+  border-bottom: 1px solid #363639;
   margin: 24px 0;
 }
 .at-profile-tabs button {
@@ -329,15 +329,15 @@
   font-weight: 750;
 }
 .at-profile-tabs button.active {
-  border-bottom-color: #ff6a30;
+  border-bottom-color: #ffa859;
   color: #fff;
 }
 .at-profile-tabs button span {
-  background: #2c292e;
+  background: #2b2b2e;
   border-radius: 100px;
   padding: 3px 8px;
   margin-left: 6px;
-  color: #ffae88;
+  color: #ffcda0;
   font-size: 11px;
 }
 .at-profile-grid {
@@ -348,7 +348,7 @@
 .at-profile-card {
   min-width: 0;
   overflow: hidden;
-  border: 1px solid #35323a;
+  border: 1px solid #37373a;
   border-radius: 10px;
   background: #19191d;
 }
@@ -356,7 +356,7 @@
   width: 100%;
   aspect-ratio: 2/3;
   overflow: hidden;
-  background: #2a1714;
+  background: #27272a;
   display: grid;
   place-items: center;
 }
@@ -376,7 +376,7 @@
   margin: 0 0 7px;
 }
 .at-profile-card-status {
-  color: #ff9e69;
+  color: #ffc087;
   font-size: 11px;
   font-weight: 800;
 }
@@ -389,12 +389,12 @@
   height: 5px;
   border-radius: 20px;
   overflow: hidden;
-  background: #49424a;
+  background: #4a4642;
 }
 .at-profile-progress span {
   height: 100%;
   display: block;
-  background: #ff652d;
+  background: #ffa757;
 }
 .at-profile-card-controls {
   display: flex;
@@ -403,19 +403,19 @@
   margin-top: 10px;
 }
 .at-profile-card-controls button {
-  border: 1px solid #49434a;
+  border: 1px solid #4a4643;
   border-radius: 7px;
   padding: 5px 9px;
   color: #fff;
-  background: #2b292d;
+  background: #2a2a2d;
   font-size: 11px;
 }
 .at-profile-card-controls button:hover {
-  border-color: #ff7741;
+  border-color: #ffb067;
 }
 .at-profile-list-empty {
   padding: 50px 24px;
-  border: 1px dashed #44414a;
+  border: 1px dashed #4a4541;
   border-radius: 12px;
   text-align: center;
   color: #bbb6bf;
@@ -428,9 +428,9 @@
   min-height: 360px;
   justify-content: center;
   padding: clamp(25px, 6vw, 90px);
-  border: 1px solid #383139;
+  border: 1px solid #363639;
   border-radius: 14px;
-  background: linear-gradient(115deg, #281915, #121215);
+  background: linear-gradient(115deg, #262628, #121215);
 }
 .at-profile-empty h1 {
   font-size: clamp(27px, 4vw, 50px);
@@ -443,7 +443,7 @@
 .at-profile-edit {
   padding: 24px;
   margin: 27px 0 0;
-  border: 1px solid #3b353a;
+  border: 1px solid #37373b;
   border-radius: 14px;
   background: #18181c;
 }
@@ -464,7 +464,7 @@
 .at-profile-public-toggle input {
   width: 19px;
   height: 19px;
-  accent-color: #ff632c;
+  accent-color: #ffa756;
 }
 .at-profile-public-toggle span {
   display: flex;
@@ -496,9 +496,9 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  border: 1px solid #424047;
+  border: 1px solid #434347;
   border-radius: 9px;
-  background: #232126;
+  background: #242426;
   padding: 12px 16px;
   color: #f3f2f3;
   text-align: left;
@@ -506,12 +506,12 @@
   font-weight: 750;
 }
 .at-status-action-grid button:hover {
-  border-color: #ff682e;
-  background: #33251f;
+  border-color: #ffa858;
+  background: #303033;
 }
 .at-status-action-grid button.active {
-  border-color: #ff712d;
-  background: #40281f;
+  border-color: #ffa757;
+  background: #3c3c40;
 }
 .at-status-panel {
   margin-top: 17px;
@@ -526,10 +526,10 @@
 .at-status-panel input {
   width: 92px;
   padding: 8px 10px;
-  border: 1px solid #544a50;
+  border: 1px solid #544f4a;
   border-radius: 7px;
   color: #fff;
-  background: #141316;
+  background: #151516;
 }
 .at-status-panel-actions {
   display: flex;
@@ -591,8 +591,8 @@
 }
 .at-profile-edit input[type="file"] {
   padding: 12px;
-  border: 1px dashed #5d4b42;
-  background: #191417;
+  border: 1px dashed #5d5247;
+  background: #171719;
   border-radius: 8px;
   max-width: 100%;
   color: #ddd;
@@ -618,28 +618,28 @@
   border: 1px solid #ffffff6b;
   border-radius: 9px;
   padding: 8px 12px;
-  background: #0c0a0dbb;
+  background: #0c0c0dbb;
   color: #fff;
   font-size: 12px;
   backdrop-filter: blur(7px);
 }
 .at-cover-edit-shortcut:hover {
-  border-color: #ff783a;
-  background: #2c1b17ea;
+  border-color: #ffad61;
+  background: #29292cea;
 }
 .at-banner-settings {
   display: grid;
   gap: 12px;
   padding: 15px;
-  border: 1px solid #3b3330;
+  border: 1px solid #37373b;
   border-radius: 10px;
-  background: #211c1b;
+  background: #1f1f21;
 }
 .at-banner-settings input[type="range"] {
   min-height: 20px;
   width: 100%;
   padding: 0;
-  accent-color: #ff682e;
+  accent-color: #ffa858;
 }
 .at-banner-settings .at-remove-banner {
   justify-self: start;
@@ -669,7 +669,7 @@
   padding: 0;
 }
 .at-profile-title-link:hover {
-  color: #ff9c6d;
+  color: #ffc28a;
 }
 
 /* Etapa 7: indicador de aba com layout spring (Motion para React). */
@@ -690,7 +690,7 @@
   padding: 0;
   border: none;
   border-radius: 5px;
-  background: #ff6a30;
+  background: #ffa859;
   pointer-events: none;
 }
 .at-profile-card {

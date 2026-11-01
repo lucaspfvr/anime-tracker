@@ -99,7 +99,7 @@ export function AuthDialog({ onClose }: { onClose: () => void }) {
           ×
         </button>
         <span className="at-account-kicker">
-          ANIME TRACKER • SUA COMUNIDADE
+          FABLE • SUA COMUNIDADE
         </span>
         <h2 id="at-auth-title">
           {tab === "register"
@@ -249,7 +249,7 @@ export function AvatarMenu({
             <small>
               {account.profile
                 ? `@${account.profile.username}`
-                : "Anime Tracker"}
+                : "Fable"}
             </small>
           </div>
           {account.user ? (
@@ -529,7 +529,7 @@ export function ProfilePage({
             : undefined
         }
       >
-        <span>ANIME TRACKER / SUA HISTÓRIA EM ANIME</span>
+        <span>FABLE / SEU DIÁRIO DE ANIMES</span>
         {ownEdit && (
           <button
             type="button"

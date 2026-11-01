@@ -355,7 +355,7 @@ function Poster({
               draggable={false}
             />
           ) : (
-            <span className="at-poster-fallback">ANIME TRACKER</span>
+            <span className="at-poster-fallback">FABLE</span>
           )}
           {ratingOf(anime) && (
             <span className="at-rating">★ {ratingOf(anime)}</span>
@@ -739,7 +739,7 @@ function AnimeSynopsisOverlay({
           {posterOf(anime) ? (
             <img src={posterOf(anime)} alt={`Capa de ${titleOf(anime)}`} />
           ) : (
-            <span>ANIME TRACKER</span>
+            <span>FABLE</span>
           )}
         </div>
         <div className="at-synopsis-content">
@@ -813,7 +813,7 @@ function ContinueRail({
                   {heroImageOf(anime) ? (
                     <img src={heroImageOf(anime)} alt="" loading="lazy" />
                   ) : (
-                    <span className="at-poster-fallback">ANIME TRACKER</span>
+                    <span className="at-poster-fallback">FABLE</span>
                   )}
                   <span className="at-continue-play" aria-hidden="true">
                     ▶
@@ -978,7 +978,7 @@ export default function StreamingHome() {
         }
       } catch (cause) {
         if (!controller.signal.aborted) {
-          console.error("Anime Tracker: falha ao buscar catálogo", cause);
+          console.error("Fable: falha ao buscar catálogo", cause);
           setError(
             "Não foi possível atualizar o catálogo. Confira sua conexão e tente novamente.",
           );
@@ -1346,16 +1346,16 @@ export default function StreamingHome() {
               type="button"
               className="at-brand"
               onClick={() => navigate("home")}
-              title="Anime Tracker — Início"
+              title="Fable — Início"
             >
               <span className="at-brand-glyph" aria-hidden="true">
-                A
+                <img src="/fable-sakura.svg" alt="" />
               </span>
               <span className="at-brand-copy">
                 <strong>
-                  ANIME<span>TRACKER</span>
+                  Fable
                 </strong>
-                <small>SEU UNIVERSO ANIME</small>
+                <small>Seu diário de animes.</small>
               </span>
             </button>
           </div>
@@ -1411,7 +1411,7 @@ export default function StreamingHome() {
         <main className="at-main">
           <header className="at-topbar">
             <div className="at-topbar-breadcrumb">
-              ANIME TRACKER <b>/</b>{" "}
+              FABLE <b>/</b>{" "}
               {mode === "public"
                 ? "Perfil compartilhado"
                 : mode === "library"
@@ -1899,7 +1899,7 @@ export default function StreamingHome() {
             </>
           )}
           <footer className="at-page-footer">
-            ANIME TRACKER <span>•</span> DESCUBRA. ORGANIZE. ACOMPANHE.
+            FABLE <span>•</span> Seu diário de animes.
           </footer>
         </main>
 

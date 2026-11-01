@@ -181,7 +181,7 @@ export default function App() {
             setTab("list");
           }}
         >
-          <span className="brand-icon">▶</span> anime<span>tracker</span>
+          <img className="fable-legacy-logo" src="/fable-sakura.svg" alt="" /> Fable
           <small>BETA</small>
         </a>
         <span className="local-badge">● Salvo neste navegador</span>
@@ -422,7 +422,7 @@ export default function App() {
           </div>
         )}
         <footer>
-          <span>Anime Tracker · primeira versão</span>
+          <span>Fable · biblioteca local</span>
           <span>
             Catálogo:{" "}
             <a href="https://jikan.moe" target="_blank" rel="noreferrer">
