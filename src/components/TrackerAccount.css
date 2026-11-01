@@ -87,3 +87,18 @@
 .at-avatar-img, .at-profile-avatar img { width: 100%; height: 100%; display: block; object-fit: cover; border-radius: 50%; }
 .at-profile-edit input[type=file] { padding: 12px; border: 1px dashed #5d4b42; background: #191417; border-radius: 8px; max-width: 100%; color: #ddd; }
 .at-profile-edit label > small { color: #aaa5ad; font-weight: 450; }
+
+/* Personalização de capa de perfil */
+.at-profile-cover { background-size: cover; background-position: center; }
+.at-profile-cover--custom::after { content: none; }
+.at-cover-edit-shortcut { z-index: 2; position: absolute; right: 15px; bottom: 15px; border: 1px solid #ffffff6b; border-radius: 9px; padding: 8px 12px; background: #0c0a0dbb; color: #fff; font-size: 12px; backdrop-filter: blur(7px); }
+.at-cover-edit-shortcut:hover { border-color: #ff783a; background: #2c1b17ea; }
+.at-banner-settings { display: grid; gap: 12px; padding: 15px; border: 1px solid #3b3330; border-radius: 10px; background: #211c1b; }
+.at-banner-settings input[type=range] { min-height: 20px; width: 100%; padding: 0; accent-color: #ff682e; }
+.at-banner-settings .at-remove-banner { justify-self: start; }
+
+.at-profile-poster-button { display: block; width: 100%; padding: 0; border: 0; cursor: pointer; text-align: left; }
+.at-profile-poster-button:hover img { transform: scale(1.04); }
+.at-profile-poster-button img { transition: transform .25s ease; }
+.at-profile-title-link { border: 0; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; padding: 0; }
+.at-profile-title-link:hover { color: #ff9c6d; }

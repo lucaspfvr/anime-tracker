@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode, type ChangeEvent, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent } from "react";
 import "./StreamingHome.css";
-import { AuthDialog, AvatarMenu, ProfilePage, useTrackerAccount, type LibraryStatus } from "./TrackerAccount";
+import { AuthDialog, AvatarMenu, ProfilePage, useTrackerAccount, type LibraryStatus, type LibraryEntry } from "./TrackerAccount";
+import { usePortugueseSynopsis, youtubeTrailerId, YoutubeTrailerModal, type AnimeTrailer } from "./AnimeExtras";
 
 /**
  * Anime Tracker — homepage de streaming / etapa 4.
@@ -19,6 +20,9 @@ export type StreamingAnime = {
   seasonYear?: number | null;
   format?: string | null;
   status?: string | null;
+  trailer?: AnimeTrailer;
+  externalLinks?: Array<{ site: string; url?: string | null; type?: string | null; isDisabled?: boolean | null }> | null;
+  streamingEpisodes?: Array<{ site?: string | null; url?: string | null }> | null;
 };
 
 type MediaPage = { media: StreamingAnime[] };
@@ -101,6 +105,18 @@ const HOME_QUERY = `
     }
   }
 `;
+const DETAIL_QUERY = `
+  query TrackerAnimeDetails($id: Int!) {
+    Media(id: $id, type: ANIME) {
+      id title { romaji english native } description(asHtml: false)
+      bannerImage coverImage { extraLarge large } episodes genres
+      averageScore seasonYear format status
+      trailer { id site thumbnail }
+      externalLinks { site url type isDisabled }
+      streamingEpisodes { site url }
+    }
+  }
+`;
 const SEARCH_QUERY = `
   ${MEDIA_FIELDS}
   query TrackerSearch($term: String!) {
@@ -115,13 +131,6 @@ const titleOf = (anime: StreamingAnime) =>
 const posterOf = (anime: StreamingAnime) =>
   anime.coverImage?.extraLarge || anime.coverImage?.large || "";
 const heroImageOf = (anime: StreamingAnime) => anime.bannerImage || posterOf(anime);
-const summaryOf = (value?: string | null, max = 190) => {
-  const cleaned = (value || "").replace(/<[^>]*>/g, " ")
-    .replace(/&nbsp;/gi, " ").replace(/&amp;/gi, "&")
-    .replace(/&#39;/g, "'").replace(/&quot;/gi, '"')
-    .replace(/\s+/g, " ").trim();
-  return cleaned.length > max ? `${cleaned.slice(0, max).trimEnd()}…` : cleaned;
-};
 const ratingOf = (anime: StreamingAnime) =>
   typeof anime.averageScore === "number" ? (anime.averageScore / 10).toFixed(1).replace(".", ",") : null;
 const FORMATS: Record<string, string> = { TV: "Série", TV_SHORT: "Série curta", MOVIE: "Filme", OVA: "OVA", ONA: "ONA", SPECIAL: "Especial" };
@@ -276,6 +285,63 @@ function Rail({ title, eyebrow, items, onSelect, ranked = false }: { title: stri
   );
 }
 
+function HeroSynopsis({ anime }: { anime: StreamingAnime | null }) {
+  const pt = usePortugueseSynopsis(anime?.id, anime?.description, 240);
+  return <p className="at-hero-description" aria-live="polite">
+    {anime ? (pt.text || 'Veja detalhes para conhecer a história deste anime.') : 'Explore tendências, novos episódios e os favoritos do público.'}
+  </p>;
+}
+
+type Provider = { name: string; url: string };
+function safeHttpUrl(value: string | null | undefined): string | null {
+  try { const url = new URL(value || ''); return ['https:', 'http:'].includes(url.protocol) ? url.toString() : null; }
+  catch { return null; }
+}
+function streamingProviders(anime: StreamingAnime): Provider[] {
+  const providers: Provider[] = [];
+  const used = new Set<string>();
+  const add = (site: string | null | undefined, link: string | null | undefined) => {
+    const url = safeHttpUrl(link);
+    const name = (site || '').trim();
+    if (!name || !url) return;
+    const key = name.toLowerCase();
+    if (used.has(key)) return;
+    used.add(key);
+    providers.push({ name, url });
+  };
+  // ExternalLinkType.STREAMING identifica serviços de streaming na classificação do AniList.
+  (anime.externalLinks || []).forEach(link => {
+    if (link.type === 'STREAMING' && !link.isDisabled) add(link.site, link.url);
+  });
+  // URLs de episódios legalmente disponibilizados pela fonte do AniList.
+  (anime.streamingEpisodes || []).forEach(episode => add(episode.site, episode.url));
+  return providers;
+}
+function AnimeDetailsInfo({ anime, loading, unavailable, onTrailer }: { anime: StreamingAnime; loading: boolean; unavailable: boolean; onTrailer: (id: string) => void }) {
+  const synopsis = usePortugueseSynopsis(anime.id, anime.description, 1600);
+  const trailerId = youtubeTrailerId(anime.trailer);
+  const providers = streamingProviders(anime);
+  return <>
+    <h3 className="at-details-subtitle">Sinopse</h3>
+    <p className="at-details-synopsis">{synopsis.text || (loading ? 'Carregando sinopse...' : 'Sinopse ainda não disponível no AniList.')}</p>
+    {synopsis.loading && <span className="at-synopsis-state" role="status">Traduzindo para português...</span>}
+    {synopsis.failed && <span className="at-synopsis-state">Tradução indisponível no momento; exibindo a sinopse original.</span>}
+    {synopsis.translated && <span className="at-synopsis-state">Tradução automática • pode conter imprecisões</span>}
+    <div className="at-trailer-actions">
+      {trailerId ? <button className="at-btn at-btn-primary" type="button" onClick={() => onTrailer(trailerId)}>▶ Assistir trailer</button>
+        : loading ? <span className="at-streaming-muted">Procurando trailer oficial...</span>
+        : <a className="at-btn at-btn-outline" href={`https://www.youtube.com/results?search_query=${encodeURIComponent(`${anime.title.romaji || anime.title.english || ''} trailer oficial`)}`} target="_blank" rel="noopener noreferrer">Pesquisar trailer no YouTube ↗</a>}
+    </div>
+    <section className="at-streaming-section" aria-label="Onde assistir">
+      <h3 className="at-details-subtitle">Onde assistir:</h3>
+      {loading ? <p className="at-streaming-muted">Consultando plataformas...</p> : unavailable ? <p className="at-streaming-muted">Não foi possível consultar os links do AniList neste momento.</p> : providers.length ?
+        <div className="at-streaming-providers">{providers.map(provider => <a key={provider.name} href={provider.url} target="_blank" rel="noopener noreferrer" className="at-streaming-provider">{provider.name}<span aria-hidden="true">↗</span></a>)}</div>
+        : <p className="at-streaming-muted">O AniList não informou plataformas de streaming para este anime.</p>}
+      <small>Links fornecidos pelo AniList. A disponibilidade varia conforme o país e o catálogo do serviço; confirme a oferta no Brasil ao abrir o link.</small>
+    </section>
+  </>;
+}
+
 function ContinueRail({ watching, openLibrary }: { watching: Watching[]; openLibrary: () => void }) {
   const listRef = useRef<HTMLDivElement | null>(null);
   return (
@@ -314,7 +380,17 @@ export default function StreamingHome({ children, onAddAnime, onOpenAnime, isAni
   const [error, setError] = useState<string | null>(null);
   const [reload, setReload] = useState(0);
   const [heroIndex, setHeroIndex] = useState(0);
+  const [heroMotion, setHeroMotion] = useState<'next' | 'prev'>('next');
+  // Guarda o destaque anterior até a animação de saída terminar.
+  const [departingHero, setDepartingHero] = useState<StreamingAnime | null>(null);
+  const heroTransitionLocked = useRef(false);
+  const heroTransitionTimer = useRef<number | null>(null);
+  const [heroPaused, setHeroPaused] = useState(false);
   const [details, setDetails] = useState<StreamingAnime | null>(null);
+  const [richDetails, setRichDetails] = useState<StreamingAnime | null>(null);
+  const [detailsLoading, setDetailsLoading] = useState(false);
+  const [detailsError, setDetailsError] = useState(false);
+  const [trailerId, setTrailerId] = useState<string | null>(null);
   const account = useTrackerAccount();
   const [authOpen, setAuthOpen] = useState(false);
   const [sharedUsername, setSharedUsername] = useState<string | null>(() => new URLSearchParams(window.location.search).get("perfil"));
@@ -332,6 +408,19 @@ export default function StreamingHome({ children, onAddAnime, onOpenAnime, isAni
   const [watching, setWatching] = useState<Watching[]>(readWatching);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const latestSearch = useRef(0);
+  useEffect(() => {
+    if (!details) { setRichDetails(null); setDetailsLoading(false); return; }
+    const controller = new AbortController();
+    setRichDetails(null);
+    setDetailsError(false);
+    setDetailsLoading(true);
+    void runAniList<{ Media: StreamingAnime }>(DETAIL_QUERY, { id: details.id }, controller.signal)
+      .then(result => { if (!controller.signal.aborted) setRichDetails(result.Media); })
+      .catch(err => { if (!controller.signal.aborted) { setDetailsError(true); console.warn('AniList detalhes:', err); } })
+      .finally(() => { if (!controller.signal.aborted) setDetailsLoading(false); });
+    return () => controller.abort();
+  }, [details?.id]);
+
   useEffect(() => {
     const handlePop = () => {
       const slug = new URLSearchParams(window.location.search).get("perfil");
@@ -354,6 +443,9 @@ export default function StreamingHome({ children, onAddAnime, onOpenAnime, isAni
         if (!controller.signal.aborted) {
           setData(result);
           setHeroIndex(0);
+          heroTransitionLocked.current = false;
+          if (heroTransitionTimer.current !== null) window.clearTimeout(heroTransitionTimer.current);
+          setDepartingHero(null);
         }
       } catch (cause) {
         if (!controller.signal.aborted) {
@@ -417,7 +509,7 @@ export default function StreamingHome({ children, onAddAnime, onOpenAnime, isAni
   useEffect(() => {
     if (!details && !searchOpen) return;
     const keyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") { setDetails(null); setSearchOpen(false); }
+      if (event.key === "Escape") { setDetails(null); setTrailerId(null); setSearchOpen(false); }
     };
     window.addEventListener("keydown", keyDown);
     return () => window.removeEventListener("keydown", keyDown);
@@ -435,9 +527,38 @@ export default function StreamingHome({ children, onAddAnime, onOpenAnime, isAni
   const hero = heroes[heroIndex] || null;
   const previousHero = heroes.length > 1 ? heroes[(heroIndex - 1 + heroes.length) % heroes.length] : null;
   const nextHero = heroes.length > 1 ? heroes[(heroIndex + 1) % heroes.length] : null;
-  const changeHero = (direction: number) => {
-    if (heroes.length > 1) setHeroIndex((index) => (index + direction + heroes.length) % heroes.length);
+  const goToHero = (targetIndex: number, direction: 'next' | 'prev') => {
+    if (heroes.length < 2 || targetIndex === heroIndex || heroTransitionLocked.current) return;
+    setHeroMotion(direction);
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setHeroIndex(targetIndex);
+      return;
+    }
+    heroTransitionLocked.current = true;
+    setDepartingHero(heroes[heroIndex]);
+    setHeroIndex(targetIndex);
+    if (heroTransitionTimer.current !== null) window.clearTimeout(heroTransitionTimer.current);
+    heroTransitionTimer.current = window.setTimeout(() => {
+      heroTransitionLocked.current = false;
+      setDepartingHero(null);
+      heroTransitionTimer.current = null;
+    }, 740);
   };
+  const changeHero = (direction: number) => {
+    if (heroes.length > 1) goToHero((heroIndex + direction + heroes.length) % heroes.length, direction < 0 ? 'prev' : 'next');
+  };
+  useEffect(() => {
+    return () => { if (heroTransitionTimer.current !== null) window.clearTimeout(heroTransitionTimer.current); };
+  }, []);
+  useEffect(() => {
+    if (mode !== 'home' || heroes.length < 2 || heroPaused || details || searchOpen) return;
+    // Ao trocar manualmente, reinicia a contagem de 9 s para a próxima troca.
+    const timer = window.setTimeout(() => {
+      if (document.visibilityState !== 'visible' || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      goToHero((heroIndex + 1) % heroes.length, 'next');
+    }, 9000);
+    return () => window.clearTimeout(timer);
+  }, [mode, heroes.length, heroIndex, heroPaused, details, searchOpen]);
   const openAnime = (anime: StreamingAnime) => {
     const saved = account.entries.find(item => item.anime_id === anime.id);
     setChosenStatus(saved?.status || "planned");
@@ -471,6 +592,7 @@ export default function StreamingHome({ children, onAddAnime, onOpenAnime, isAni
     }).map((entry) => entry.media as StreamingAnime);
   }, [data]);
 
+  const selectedDetails = details ? (richDetails && richDetails.id === details.id ? { ...details, ...richDetails } : details) : null;
   const selectedSaved = details && isAnimeSaved ? isAnimeSaved(details) : false;
   const cloudWatching: Watching[] = account.entries.filter(item => item.status === "watching").map(item => ({
     anime: { id: item.anime_id, title: { romaji: item.anime_title }, bannerImage: item.banner_url,
@@ -482,8 +604,9 @@ export default function StreamingHome({ children, onAddAnime, onOpenAnime, isAni
     if (!details) return;
     setSavingAnime(true); setSaveError(""); setSaveMessage("");
     try {
-      await account.saveAnime({ id: details.id, title: titleOf(details), cover: posterOf(details),
-        banner: details.bannerImage || null, total: details.episodes || null }, chosenStatus, chosenEpisodes);
+      const anime = richDetails?.id === details.id ? richDetails : details;
+      await account.saveAnime({ id: anime.id, title: titleOf(anime), cover: posterOf(anime),
+        banner: anime.bannerImage || null, total: anime.episodes || null }, chosenStatus, chosenEpisodes);
       setSaveMessage("Anime salvo na sua biblioteca!");
     } catch (cause) { setSaveError(cause instanceof Error ? cause.message : "Erro ao salvar anime."); }
     finally { setSavingAnime(false); }
@@ -527,7 +650,8 @@ export default function StreamingHome({ children, onAddAnime, onOpenAnime, isAni
         </header>
 
         {mode === "library" || mode === "public" ? (
-          <ProfilePage account={account} sharedUsername={mode === "public" ? sharedUsername : null} onSignIn={() => setAuthOpen(true)} onOpenLegacy={() => navigate("legacy")}/>
+          <ProfilePage account={account} sharedUsername={mode === "public" ? sharedUsername : null} onSignIn={() => setAuthOpen(true)} onOpenLegacy={() => navigate("legacy")}
+            onSelectAnime={(entry: LibraryEntry) => openAnime({ id: entry.anime_id, title: { romaji: entry.anime_title }, bannerImage: entry.banner_url, coverImage: { extraLarge: entry.cover_url }, episodes: entry.total_episodes })}/>
         ) : mode === "legacy" ? (
           <section className="at-library-section" id="minha-lista">
             <div className="at-section-heading at-library-heading"><div><span className="at-eyebrow">SEU ESPAÇO</span><h1>Minha lista</h1></div><p>Organize os títulos, episódios e avaliações salvos neste navegador.</p></div>
@@ -536,14 +660,18 @@ export default function StreamingHome({ children, onAddAnime, onOpenAnime, isAni
         ) : (
           <>
             {mode === "home" && <>
-              <section className="at-hero-carousel" aria-label="Carrossel de animes em destaque" aria-roledescription="carrossel" onKeyDown={(event: ReactKeyboardEvent<HTMLElement>) => {
+              <section className={`at-hero-carousel at-slide-${heroMotion}${departingHero ? ' at-hero-is-moving' : ''}`} aria-label="Carrossel de animes em destaque" aria-roledescription="carrossel"
+                onMouseEnter={() => setHeroPaused(true)} onMouseLeave={() => setHeroPaused(false)}
+                onFocusCapture={() => setHeroPaused(true)} onBlurCapture={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setHeroPaused(false); }}
+                onKeyDown={(event: ReactKeyboardEvent<HTMLElement>) => {
                 if (event.key === "ArrowLeft") { event.preventDefault(); changeHero(-1); }
                 if (event.key === "ArrowRight") { event.preventDefault(); changeHero(1); }
               }}>
-                {previousHero ? <button className="at-hero-preview at-hero-preview--previous" type="button" onClick={() => changeHero(-1)} aria-label={`Destaque anterior: ${titleOf(previousHero)}`}><img src={heroImageOf(previousHero)} alt=""/><span className="at-hero-preview-symbol">‹</span></button> : <div className="at-hero-preview at-hero-preview--empty"/>}
+                {previousHero ? <button className="at-hero-preview at-hero-preview--previous" type="button" onClick={() => changeHero(-1)} aria-label={`Destaque anterior: ${titleOf(previousHero)}`}><img key={previousHero.id} src={heroImageOf(previousHero)} alt=""/><span className="at-hero-preview-symbol">‹</span></button> : <div className="at-hero-preview at-hero-preview--empty"/>}
                 <div className="at-hero" aria-live="polite" aria-atomic="true">
                   {hero && <div className="at-hero-image" aria-hidden="true"><img key={hero.id} src={heroImageOf(hero)} alt=""/></div>}
-                  <div className="at-hero-copy">
+                  {departingHero && <div className="at-hero-image at-hero-image--leaving" aria-hidden="true"><img src={heroImageOf(departingHero)} alt=""/></div>}
+                  <div className="at-hero-copy" key={hero?.id || "unavailable"}>
                     <div className="at-featured-label"><span className="at-featured-pulse"/> EM DESTAQUE</div>
                     <p className="at-hero-kicker">HISTÓRIAS QUE MERECEM SUA ATENÇÃO</p>
                     <h1>{hero ? titleOf(hero) : "Seu próximo anime começa aqui."}</h1>
@@ -553,7 +681,7 @@ export default function StreamingHome({ children, onAddAnime, onOpenAnime, isAni
                       {hero?.genres?.slice(0,2).map((genre) => <span key={genre}>{genre}</span>)}
                       {hero && ratingOf(hero) && <span className="at-hero-score">★ {ratingOf(hero)}</span>}
                     </div>
-                    <p className="at-hero-description">{hero ? summaryOf(hero.description, 195) : "Explore tendências, novos episódios e os favoritos do público."}</p>
+                    <HeroSynopsis anime={hero}/>
                     <div className="at-hero-actions">
                       <button className="at-btn at-btn-primary" type="button" onClick={() => hero ? openAnime(hero) : navigate("discover")}>▶ <span>{hero ? "Ver detalhes" : "Explorar"}</span></button>
                       <button className="at-btn at-btn-outline" type="button" onClick={() => navigate("library")}><Icon name="bookmark" size={16}/> Minha lista</button>
@@ -562,10 +690,10 @@ export default function StreamingHome({ children, onAddAnime, onOpenAnime, isAni
                   {heroes.length > 1 && <>
                     <button type="button" className="at-hero-nav at-hero-nav--previous" onClick={() => changeHero(-1)} aria-label="Destaque anterior">‹</button>
                     <button type="button" className="at-hero-nav at-hero-nav--next" onClick={() => changeHero(1)} aria-label="Próximo destaque">›</button>
-                    <div className="at-hero-pagination" aria-label="Selecionar destaque">{heroes.map((item, index) => <button type="button" key={item.id} className={index === heroIndex ? "is-selected" : ""} aria-label={`Mostrar destaque ${index + 1}: ${titleOf(item)}`} aria-pressed={index === heroIndex} onClick={() => setHeroIndex(index)}/>)}</div>
+                    <div className="at-hero-pagination" aria-label="Selecionar destaque">{heroes.map((item, index) => <button type="button" key={item.id} className={index === heroIndex ? "is-selected" : ""} aria-label={`Mostrar destaque ${index + 1}: ${titleOf(item)}`} aria-pressed={index === heroIndex} onClick={() => goToHero(index, index < heroIndex ? 'prev' : 'next')}/>)}</div>
                   </>}
                 </div>
-                {nextHero ? <button className="at-hero-preview at-hero-preview--next" type="button" onClick={() => changeHero(1)} aria-label={`Próximo destaque: ${titleOf(nextHero)}`}><img src={heroImageOf(nextHero)} alt=""/><span className="at-hero-preview-symbol">›</span></button> : <div className="at-hero-preview at-hero-preview--empty"/>}
+                {nextHero ? <button className="at-hero-preview at-hero-preview--next" type="button" onClick={() => changeHero(1)} aria-label={`Próximo destaque: ${titleOf(nextHero)}`}><img key={nextHero.id} src={heroImageOf(nextHero)} alt=""/><span className="at-hero-preview-symbol">›</span></button> : <div className="at-hero-preview at-hero-preview--empty"/>}
               </section>
               <ContinueRail watching={account.user ? cloudWatching : watching} openLibrary={() => navigate("library")}/>
             </>}
@@ -589,35 +717,36 @@ export default function StreamingHome({ children, onAddAnime, onOpenAnime, isAni
       </main>
 
       {authOpen && <AuthDialog onClose={() => setAuthOpen(false)}/>}
-      {details && <div className="at-modal-backdrop" onMouseDown={(event: ReactMouseEvent<HTMLDivElement>) => { if (event.target === event.currentTarget) setDetails(null); }}>
-        <section className="at-modal" role="dialog" aria-modal="true" aria-label={`Detalhes de ${titleOf(details)}`}>
+      {selectedDetails && <div className="at-modal-backdrop" onMouseDown={(event: ReactMouseEvent<HTMLDivElement>) => { if (event.target === event.currentTarget) setDetails(null); }}>
+        <section className="at-modal" role="dialog" aria-modal="true" aria-label={`Detalhes de ${titleOf(selectedDetails)}`}>
           <button type="button" className="at-modal-close" aria-label="Fechar" onClick={() => setDetails(null)}>×</button>
-          <div className="at-modal-banner" style={heroImageOf(details) ? { backgroundImage: `linear-gradient(0deg,#151515,transparent),url("${heroImageOf(details)}")` } : undefined}/>
-          <div className="at-modal-body"><span className="at-eyebrow">CONHEÇA O ANIME</span><h2>{titleOf(details)}</h2>
-            <div className="at-modal-meta">{details.seasonYear && <span>{details.seasonYear}</span>}<span>{formatOf(details)}</span>{details.episodes && <span>{details.episodes} episódios</span>}{ratingOf(details) && <span>★ {ratingOf(details)}</span>}</div>
-            <p>{summaryOf(details.description, 1300) || "Sinopse indisponível."}</p>
-            <div className="at-modal-tags">{details.genres?.slice(0,5).map((genre) => <span key={genre}>{genre}</span>)}</div>
+          <div className="at-modal-banner" style={heroImageOf(selectedDetails) ? { backgroundImage: `linear-gradient(0deg,#151515,transparent),url("${heroImageOf(selectedDetails)}")` } : undefined}/>
+          <div className="at-modal-body"><span className="at-eyebrow">CONHEÇA O ANIME</span><h2>{titleOf(selectedDetails)}</h2>
+            <div className="at-modal-meta">{selectedDetails.seasonYear && <span>{selectedDetails.seasonYear}</span>}<span>{formatOf(selectedDetails)}</span>{selectedDetails.episodes && <span>{selectedDetails.episodes} episódios</span>}{ratingOf(selectedDetails) && <span>★ {ratingOf(selectedDetails)}</span>}</div>
+            <AnimeDetailsInfo anime={selectedDetails} loading={detailsLoading} unavailable={detailsError} onTrailer={setTrailerId} />
+            <div className="at-modal-tags">{selectedDetails.genres?.slice(0,5).map((genre) => <span key={genre}>{genre}</span>)}</div>
             {account.user ? <div className="at-status-panel">
               <span className="at-account-kicker">ADICIONAR À SUA BIBLIOTECA {detailsEntry ? '• JÁ SALVO' : ''}</span>
               <div className="at-status-action-grid">
                 {([['watching', '▶ Assistindo'], ['completed', '✓ Concluído'], ['planned', '＋ Assistir mais tarde']] as [LibraryStatus,string][]).map(([status, label]) =>
                   <button type="button" className={chosenStatus === status ? 'active' : ''} key={status} onClick={() => setChosenStatus(status)} aria-pressed={chosenStatus === status}>{label}<span>{chosenStatus === status ? '●' : '○'}</span></button>)}
               </div>
-              {chosenStatus === 'watching' && <label>Episódios assistidos <input type="number" min={0} max={details.episodes || undefined} value={chosenEpisodes} onChange={e => setChosenEpisodes(Math.max(0, Number(e.target.value) || 0))}/>{details.episodes ? ` / ${details.episodes}` : ''}</label>}
+              {chosenStatus === 'watching' && <label>Episódios assistidos <input type="number" min={0} max={selectedDetails.episodes || undefined} value={chosenEpisodes} onChange={e => setChosenEpisodes(Math.max(0, Number(e.target.value) || 0))}/>{selectedDetails.episodes ? ` / ${selectedDetails.episodes}` : ''}</label>}
               {saveError && <div className="at-account-error" role="alert">{saveError}</div>}
               {saveMessage && <div className="at-account-info" role="status">{saveMessage}</div>}
               <div className="at-status-panel-actions">
                 <button className="at-btn at-btn-primary" type="button" disabled={savingAnime} onClick={() => void saveDetailsAnime()}>{savingAnime ? 'Salvando...' : 'Salvar na minha lista'}</button>
-                <a className="at-btn at-btn-outline" href={`https://anilist.co/anime/${details.id}`} target="_blank" rel="noopener noreferrer">Ver no AniList ↗</a>
+                <a className="at-btn at-btn-outline" href={`https://anilist.co/anime/${selectedDetails.id}`} target="_blank" rel="noopener noreferrer">Ver no AniList ↗</a>
               </div>
             </div> : <div className="at-modal-actions">
               <button className="at-btn at-btn-primary" type="button" onClick={() => setAuthOpen(true)}>Entre para salvar na sua lista</button>
-              <a className="at-btn at-btn-outline" href={`https://anilist.co/anime/${details.id}`} target="_blank" rel="noopener noreferrer">Ver no AniList ↗</a>
-              {onAddAnime && <button className="at-btn at-btn-outline" disabled={Boolean(selectedSaved)} type="button" onClick={() => onAddAnime(details)}>{selectedSaved ? 'Salvo localmente' : 'Adicionar à biblioteca antiga'}</button>}
+              <a className="at-btn at-btn-outline" href={`https://anilist.co/anime/${selectedDetails.id}`} target="_blank" rel="noopener noreferrer">Ver no AniList ↗</a>
+              {onAddAnime && <button className="at-btn at-btn-outline" disabled={Boolean(selectedSaved)} type="button" onClick={() => onAddAnime(selectedDetails)}>{selectedSaved ? 'Salvo localmente' : 'Adicionar à biblioteca antiga'}</button>}
             </div>}
           </div>
         </section>
       </div>}
+      {trailerId && selectedDetails && <YoutubeTrailerModal id={trailerId} title={titleOf(selectedDetails)} onClose={() => setTrailerId(null)}/>}
     </div>
   );
 }

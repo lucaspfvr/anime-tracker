@@ -453,3 +453,72 @@ body:has(.at-shell) {
 .at-topbar .at-library-link:hover { background: rgba(255,255,255,.08); }
 .at-topbar .at-library-link svg { width: 22px; height: 22px; }
 @media(max-width:700px) { .at-topbar .at-library-link { display:grid; } .at-topbar-actions { gap: 5px; } .at-topbar:has(.at-search-widget.is-open) .at-library-link { display:none; } }
+
+/* Etapa 6: transições mais suaves, botões de trailer e plataformas */
+.at-hero-copy { animation: at-slide-copy .38s cubic-bezier(.19,1,.22,1) both; }
+@keyframes at-slide-copy { from { opacity: .15; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+.at-hero-preview img { animation: at-neighbor-slide .4s ease both; }
+@keyframes at-neighbor-slide { from { opacity: .18; transform: scale(1.1); } to { opacity: 1; transform: scale(1); } }
+.at-poster-card { transition: transform .22s ease, filter .2s ease; transform-origin: bottom center; }
+.at-poster-card:hover { transform: translateY(-8px) scale(1.026); filter: brightness(1.12); }
+.at-modal { animation: at-details-pop .24s cubic-bezier(.2,.9,.2,1) both; }
+@keyframes at-details-pop { from { opacity: 0; transform: translateY(14px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+.at-details-subtitle { font-size: 15px; font-weight: 900; margin: 19px 0 7px; }
+.at-details-synopsis { white-space: pre-line; }
+.at-trailer-actions { margin-top: 14px; display: flex; gap: 10px; flex-wrap: wrap; }
+.at-streaming-section { border-top: 1px solid #343139; margin-top: 19px; padding-top: 4px; }
+.at-streaming-section small { display: block; margin: 13px 0 7px; font-size: 11px; line-height: 1.55; color: #98939c; }
+.at-streaming-muted { font-size: 12px !important; color: #aea7ac !important; }
+.at-streaming-providers { display: flex; flex-wrap: wrap; gap: 9px; }
+.at-streaming-provider { color: #fff; display: inline-flex; gap: 10px; align-items: center; border: 1px solid #51413c; border-radius: 8px; background: #251d1b; padding: 10px 12px; font-size: 12px; font-weight: 700; text-decoration: none; transition: background .18s ease, transform .18s ease; }
+.at-streaming-provider:hover { background: #593022; transform: translateY(-2px); }
+@media (prefers-reduced-motion: reduce) { .at-hero-copy, .at-hero-preview img, .at-modal { animation: none !important; } .at-poster-card:hover { transform: none; } }
+
+/* Sentido do movimento do carrossel, 9 s entre destaques; pausa no hover/foco */
+.at-slide-next .at-hero-image img { animation: at-hero-enter-next .55s cubic-bezier(.22,.75,.27,1) both; }
+.at-slide-prev .at-hero-image img { animation: at-hero-enter-prev .55s cubic-bezier(.22,.75,.27,1) both; }
+.at-slide-next .at-hero-copy { animation-name: at-slide-copy-next; }
+.at-slide-prev .at-hero-copy { animation-name: at-slide-copy-prev; }
+@keyframes at-hero-enter-next { from { opacity: .3; transform: translateX(3%) scale(1.04); } to { opacity: .95; transform: translateX(0) scale(1); } }
+@keyframes at-hero-enter-prev { from { opacity: .3; transform: translateX(-3%) scale(1.04); } to { opacity: .95; transform: translateX(0) scale(1); } }
+@keyframes at-slide-copy-next { from { opacity: .3; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes at-slide-copy-prev { from { opacity: .3; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+@media (prefers-reduced-motion: reduce) { .at-slide-next .at-hero-image img, .at-slide-prev .at-hero-image img, .at-hero-copy { animation: none !important; } }
+
+/* Etapa 6.1 — deslize real do carrossel. O banner anterior continua na tela
+   durante a transição, enquanto o novo entra da direção escolhida. */
+.at-hero-image { width: 100%; height: 100%; }
+.at-hero-image img { width: 100%; height: 100%; }
+.at-hero-is-moving .at-hero-image { pointer-events: none; }
+.at-hero-is-moving.at-slide-next .at-hero-image:not(.at-hero-image--leaving) img {
+  animation: at-carousel-enter-right .7s cubic-bezier(.45,0,.55,1) both;
+}
+.at-hero-is-moving.at-slide-next .at-hero-image--leaving img {
+  animation: at-carousel-exit-left .7s cubic-bezier(.45,0,.55,1) both;
+}
+.at-hero-is-moving.at-slide-prev .at-hero-image:not(.at-hero-image--leaving) img {
+  animation: at-carousel-enter-left .7s cubic-bezier(.45,0,.55,1) both;
+}
+.at-hero-is-moving.at-slide-prev .at-hero-image--leaving img {
+  animation: at-carousel-exit-right .7s cubic-bezier(.45,0,.55,1) both;
+}
+/* Sem lacunas visíveis entre as imagens durante o deslocamento. */
+@keyframes at-carousel-enter-right { from { transform: translate3d(100%,0,0); opacity: 1; } to { transform: translate3d(0,0,0); opacity: 1; } }
+@keyframes at-carousel-exit-left { from { transform: translate3d(0,0,0); opacity: 1; } to { transform: translate3d(-100%,0,0); opacity: 1; } }
+@keyframes at-carousel-enter-left { from { transform: translate3d(-100%,0,0); opacity: 1; } to { transform: translate3d(0,0,0); opacity: 1; } }
+@keyframes at-carousel-exit-right { from { transform: translate3d(0,0,0); opacity: 1; } to { transform: translate3d(100%,0,0); opacity: 1; } }
+.at-hero-is-moving .at-hero-copy { animation-duration: .52s; animation-fill-mode: both; animation-delay: .17s; }
+.at-hero-is-moving.at-slide-next .at-hero-copy { animation-name: at-carousel-copy-right; }
+.at-hero-is-moving.at-slide-prev .at-hero-copy { animation-name: at-carousel-copy-left; }
+@keyframes at-carousel-copy-right { from { transform: translate3d(38px,0,0); opacity: 0; } to { transform: translate3d(0,0,0); opacity: 1; } }
+@keyframes at-carousel-copy-left { from { transform: translate3d(-38px,0,0); opacity: 0; } to { transform: translate3d(0,0,0); opacity: 1; } }
+.at-hero-is-moving .at-hero-preview img { animation-duration: .7s; animation-fill-mode: both; }
+.at-hero-is-moving.at-slide-next .at-hero-preview--previous img { animation-name: at-carousel-neighbor-from-right; }
+.at-hero-is-moving.at-slide-prev .at-hero-preview--next img { animation-name: at-carousel-neighbor-from-left; }
+@keyframes at-carousel-neighbor-from-right { from { opacity: 0; transform: translate3d(70%,0,0) scale(1.1); } to { opacity: 1; transform: translate3d(0,0,0) scale(1); } }
+@keyframes at-carousel-neighbor-from-left { from { opacity: 0; transform: translate3d(-70%,0,0) scale(1.1); } to { opacity: 1; transform: translate3d(0,0,0) scale(1); } }
+@media (prefers-reduced-motion: reduce) {
+  .at-hero-is-moving .at-hero-image img,
+  .at-hero-is-moving .at-hero-copy,
+  .at-hero-is-moving .at-hero-preview img { animation: none !important; }
+}

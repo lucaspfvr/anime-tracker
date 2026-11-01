@@ -10,6 +10,8 @@ export type TrackerProfile = {
   display_name: string;
   bio: string;
   avatar_url: string | null;
+  banner_url: string | null;
+  banner_position: number;
   is_public: boolean;
 };
 export type LibraryEntry = {
@@ -69,7 +71,7 @@ export function useTrackerAccount() {
     const client = supabase;
     async function load() {
       const [profileResult, entryResult] = await Promise.all([
-        client.from('profiles').select('id,username,display_name,bio,avatar_url,is_public').eq('id', user!.id).maybeSingle(),
+        client.from('profiles').select('id,username,display_name,bio,avatar_url,banner_url,banner_position,is_public').eq('id', user!.id).maybeSingle(),
         client.from('library_entries').select('*').eq('user_id', user!.id).order('updated_at', { ascending: false }),
       ]);
       if (!active) return;
@@ -114,7 +116,7 @@ export function useTrackerAccount() {
     if (error) throw new Error(errorMessage(error));
     refresh();
   }, [user, refresh]);
-  const updateProfile = useCallback(async (fields: Pick<TrackerProfile, 'username' | 'display_name' | 'bio' | 'is_public'>) => {
+  const updateProfile = useCallback(async (fields: Pick<TrackerProfile, 'username' | 'display_name' | 'bio' | 'is_public' | 'banner_position'>) => {
     if (!supabase || !user) throw new Error('Entre na sua conta.');
     const username = fields.username.trim().toLowerCase();
     const displayName = fields.display_name.trim();
@@ -122,7 +124,7 @@ export function useTrackerAccount() {
     if (!displayName || displayName.length > 50) throw new Error('Nome de exibição: 1 a 50 caracteres.');
     if (fields.bio.length > 180) throw new Error('Bio: máximo de 180 caracteres.');
     const { error } = await supabase.from('profiles')
-      .update({ username, display_name: displayName, bio: fields.bio, is_public: fields.is_public })
+      .update({ username, display_name: displayName, bio: fields.bio, is_public: fields.is_public, banner_position: Math.max(0, Math.min(100, Math.round(fields.banner_position))) })
       .eq('id', user.id);
     if (error) throw new Error(errorMessage(error));
     refresh();
@@ -142,6 +144,43 @@ export function useTrackerAccount() {
     if (error) throw new Error(errorMessage(error));
     refresh();
   }, [user, refresh]);
+  const uploadBanner = useCallback(async (file: File) => {
+    if (!supabase || !user) throw new Error('Entre na sua conta.');
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) throw new Error('O banner deve ser JPG, PNG ou WebP.');
+    if (file.size > 5 * 1024 * 1024) throw new Error('O banner deve ter no máximo 5 MB.');
+    const extension = file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg';
+    const path = `${user.id}/banner-${Date.now()}.${extension}`;
+    const { error: uploadError } = await supabase.storage.from('tracker-banners').upload(path, file, {
+      upsert: false, contentType: file.type, cacheControl: '3600',
+    });
+    if (uploadError) throw new Error(errorMessage(uploadError));
+    const { data } = supabase.storage.from('tracker-banners').getPublicUrl(path);
+    const { error: updateError } = await supabase.from('profiles').update({ banner_url: data.publicUrl }).eq('id', user.id);
+    if (updateError) {
+      await supabase.storage.from('tracker-banners').remove([path]);
+      throw new Error(errorMessage(updateError));
+    }
+    const prior = profile?.banner_url || '';
+    const marker = `/tracker-banners/${user.id}/`;
+    if (prior.includes(marker)) {
+      const oldFile = prior.split(marker)[1]?.split('?')[0];
+      if (oldFile) await supabase.storage.from('tracker-banners').remove([`${user.id}/${decodeURIComponent(oldFile)}`]);
+    }
+    refresh();
+  }, [user, profile?.banner_url, refresh]);
+  const removeBanner = useCallback(async () => {
+    if (!supabase || !user) throw new Error('Entre na sua conta.');
+    const existingUrl = profile?.banner_url || '';
+    const { error: updateError } = await supabase.from('profiles').update({ banner_url: null }).eq('id', user.id);
+    if (updateError) throw new Error(errorMessage(updateError));
+    // A remoção do arquivo atual é a melhor tentativa; o perfil já foi atualizado.
+    const fragment = `/tracker-banners/${user.id}/`;
+    if (existingUrl.includes(fragment)) {
+      const filename = existingUrl.split(fragment)[1]?.split('?')[0];
+      if (filename) await supabase.storage.from('tracker-banners').remove([`${user.id}/${decodeURIComponent(filename)}`]);
+    }
+    refresh();
+  }, [user, profile?.banner_url, refresh]);
   const signOut = useCallback(async () => {
     if (!supabase) return;
     const { error } = await supabase.auth.signOut();
@@ -150,7 +189,7 @@ export function useTrackerAccount() {
   }, []);
 
   return { user, profile, entries, initializing, error, configured: Boolean(supabase),
-    refresh, saveAnime, removeAnime, updateProfile, uploadAvatar, signOut };
+    refresh, saveAnime, removeAnime, updateProfile, uploadAvatar, uploadBanner, removeBanner, signOut };
 }
 export type TrackerAccount = ReturnType<typeof useTrackerAccount>;
 
@@ -232,8 +271,8 @@ export function AvatarMenu({ account, onSignIn, onProfile }: {
   </div>;
 }
 
-export function ProfilePage({ account, sharedUsername, onSignIn, onOpenLegacy }: {
-  account: TrackerAccount; sharedUsername?: string | null; onSignIn: () => void; onOpenLegacy: () => void;
+export function ProfilePage({ account, sharedUsername, onSignIn, onOpenLegacy, onSelectAnime }: {
+  account: TrackerAccount; sharedUsername?: string | null; onSignIn: () => void; onOpenLegacy: () => void; onSelectAnime?: (entry: LibraryEntry) => void;
 }) {
   const isShared = Boolean(sharedUsername);
   const [publicProfile, setPublicProfile] = useState<TrackerProfile | null>(null);
@@ -244,10 +283,11 @@ export function ProfilePage({ account, sharedUsername, onSignIn, onOpenLegacy }:
   const [editing, setEditing] = useState(false);
   const [editError, setEditError] = useState('');
   const [feedback, setFeedback] = useState('');
-  const [form, setForm] = useState({ username: '', display_name: '', bio: '', is_public: false });
+  const [form, setForm] = useState({ username: '', display_name: '', bio: '', is_public: false, banner_position: 50 });
   const [rowBusy, setRowBusy] = useState<number | null>(null);
   const [rowError, setRowError] = useState('');
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [uploadingBanner, setUploadingBanner] = useState(false);
 
   useEffect(() => {
     if (!sharedUsername || !supabase) { setPublicProfile(null); setPublicEntries([]); return; }
@@ -255,7 +295,7 @@ export function ProfilePage({ account, sharedUsername, onSignIn, onOpenLegacy }:
     const client = supabase;
     setPublicBusy(true); setPublicError(''); setPublicProfile(null); setPublicEntries([]);
     void (async () => {
-      const p = await client.from('profiles').select('id,username,display_name,bio,avatar_url,is_public').eq('username', sharedUsername).maybeSingle();
+      const p = await client.from('profiles').select('id,username,display_name,bio,avatar_url,banner_url,banner_position,is_public').eq('username', sharedUsername).maybeSingle();
       if (!active) return;
       if (p.error) { setPublicError(errorMessage(p.error)); setPublicBusy(false); return; }
       if (!p.data) { setPublicError('Esse perfil não existe ou não está disponível para visualização.'); setPublicBusy(false); return; }
@@ -281,7 +321,7 @@ export function ProfilePage({ account, sharedUsername, onSignIn, onOpenLegacy }:
   const link = profile ? `${window.location.origin}${window.location.pathname}?perfil=${encodeURIComponent(profile.username)}` : '';
   const beginEdit = () => {
     if (!account.profile) return;
-    setForm({ username: account.profile.username, display_name: account.profile.display_name, bio: account.profile.bio, is_public: account.profile.is_public });
+    setForm({ username: account.profile.username, display_name: account.profile.display_name, bio: account.profile.bio, is_public: account.profile.is_public, banner_position: account.profile.banner_position ?? 50 });
     setEditing(true); setEditError(''); setFeedback('');
   };
   async function saveProfile(event: FormEvent<HTMLFormElement>) {
@@ -313,7 +353,11 @@ export function ProfilePage({ account, sharedUsername, onSignIn, onOpenLegacy }:
   if (!profile) return <div className="at-profile-empty"><h2>Perfil indisponível</h2><p>{publicError || account.error || 'Verifique a configuração do banco.'}</p></div>;
 
   return <section className="at-profile-page">
-    <div className="at-profile-cover"><span>ANIME TRACKER / SUA HISTÓRIA EM ANIME</span></div>
+    <div className={`at-profile-cover${profile.banner_url ? ' at-profile-cover--custom' : ''}`}
+      style={profile.banner_url ? { backgroundImage: `linear-gradient(0deg, rgba(7,7,10,.88),rgba(7,7,10,.08) 80%), url("${profile.banner_url}")`, backgroundPosition: `center, center ${ownEdit && editing ? form.banner_position : (profile.banner_position ?? 50)}%` } : undefined}>
+      <span>ANIME TRACKER / SUA HISTÓRIA EM ANIME</span>
+      {ownEdit && <button type="button" className="at-cover-edit-shortcut" onClick={beginEdit}>✎ Personalizar capa</button>}
+    </div>
     <div className="at-profile-header">
       <div className="at-profile-avatar" aria-hidden="true">{profile.avatar_url ? <img src={profile.avatar_url} alt=""/> : avatarLetters(profile.display_name)}</div>
       <div className="at-profile-person"><span className="at-account-kicker">{isOwner ? 'MEU PERFIL' : 'BIBLIOTECA COMPARTILHADA'}</span><h1>{profile.display_name}</h1><p className="at-profile-handle">@{profile.username}</p>{profile.bio && <p className="at-profile-bio">{profile.bio}</p>}</div>
@@ -339,6 +383,28 @@ export function ProfilePage({ account, sharedUsername, onSignIn, onOpenLegacy }:
         }}/>
         <small>Ao enviar uma foto, o arquivo poderá ser acessado por quem tiver seu endereço, mesmo se o perfil estiver privado.</small>
       </label>
+      <div className="at-banner-settings">
+        <label>Banner do perfil (imagem horizontal, até 5 MB)
+          <input type="file" accept="image/jpeg,image/png,image/webp" disabled={uploadingBanner} onChange={async e => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+            setUploadingBanner(true); setEditError('');
+            try { await account.uploadBanner(file); setFeedback('Banner atualizado.'); }
+            catch (cause) { setEditError(errorMessage(cause)); }
+            finally { setUploadingBanner(false); e.target.value = ''; }
+          }}/>
+          <small>Recomendado: 1600 × 450 px. A imagem enviada fica acessível por URL pública, mesmo se seu perfil for privado.</small>
+        </label>
+        <label>Posição vertical do banner: {form.banner_position}%
+          <input type="range" min={0} max={100} step={5} value={form.banner_position} onChange={e => setForm(v => ({ ...v, banner_position: Number(e.target.value) }))}/>
+        </label>
+        {account.profile?.banner_url && <button className="at-account-ghost at-remove-banner" type="button" disabled={uploadingBanner} onClick={async () => {
+          setUploadingBanner(true); setEditError('');
+          try { await account.removeBanner(); setFeedback('Banner removido.'); }
+          catch (cause) { setEditError(errorMessage(cause)); }
+          finally { setUploadingBanner(false); }
+        }}>Remover banner atual</button>}
+      </div>
       <div className="at-profile-fields">
         <label>Nome de exibição<input required maxLength={50} value={form.display_name} onChange={e => setForm(v => ({ ...v, display_name: e.target.value }))}/></label>
         <label>@usuário<input required maxLength={24} value={form.username} onChange={e => setForm(v => ({ ...v, username: e.target.value.toLowerCase() }))}/></label>
@@ -359,8 +425,8 @@ export function ProfilePage({ account, sharedUsername, onSignIn, onOpenLegacy }:
     </div>
     {rowError && <div className="at-account-error" role="alert">{rowError}</div>}
     {shown.length ? <div className="at-profile-grid">{shown.map(entry => <article className="at-profile-card" key={entry.anime_id}>
-      <div className="at-profile-poster">{entry.cover_url ? <img src={entry.cover_url} alt="" loading="lazy"/> : <span>ANIME</span>}</div>
-      <div className="at-profile-card-body"><h3>{entry.anime_title}</h3><span className="at-profile-card-status">{STATUS_NAMES[entry.status]}</span>
+      <button type="button" className="at-profile-poster at-profile-poster-button" title={`Ver detalhes de ${entry.anime_title}`} onClick={() => onSelectAnime?.(entry)}>{entry.cover_url ? <img src={entry.cover_url} alt="" loading="lazy"/> : <span>ANIME</span>}</button>
+      <div className="at-profile-card-body"><h3><button type="button" className="at-profile-title-link" onClick={() => onSelectAnime?.(entry)}>{entry.anime_title}</button></h3><span className="at-profile-card-status">{STATUS_NAMES[entry.status]}</span>
         {entry.status !== 'planned' && <p>{entry.status === 'completed' && !entry.total_episodes && !entry.watched_episodes ? 'Concluído' : `${entry.watched_episodes}${entry.total_episodes ? ` / ${entry.total_episodes}` : ''} episódios`}</p>}
         {entry.status === 'watching' && entry.total_episodes && <div className="at-profile-progress"><span style={{ width: `${Math.min(100, entry.watched_episodes / entry.total_episodes * 100)}%` }}/></div>}
         {ownEdit && <div className="at-profile-card-controls">
