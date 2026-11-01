@@ -447,3 +447,9 @@ body:has(.at-shell) {
 }
 
 @media (max-width: 700px) { .at-nav-link { width: 39px; } .at-topbar:has(.at-search-widget.is-open) .at-topbar-breadcrumb { display: none; } .at-topbar:has(.at-search-widget.is-open) { justify-content: flex-end; } }
+
+/* Etapa 5: topo no estilo streaming, ícones lado a lado e sem botão retangular. */
+.at-topbar .at-library-link { background: transparent; border: none; color: #e9e7e9; padding: 0; height: 39px; width: 39px; display: grid; place-items: center; border-radius: 50%; }
+.at-topbar .at-library-link:hover { background: rgba(255,255,255,.08); }
+.at-topbar .at-library-link svg { width: 22px; height: 22px; }
+@media(max-width:700px) { .at-topbar .at-library-link { display:grid; } .at-topbar-actions { gap: 5px; } .at-topbar:has(.at-search-widget.is-open) .at-library-link { display:none; } }

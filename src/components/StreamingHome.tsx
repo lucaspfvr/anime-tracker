@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode, type ChangeEvent, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent } from "react";
 import "./StreamingHome.css";
+import { AuthDialog, AvatarMenu, ProfilePage, useTrackerAccount, type LibraryStatus } from "./TrackerAccount";
 
 /**
  * Anime Tracker — homepage de streaming / etapa 4.
@@ -36,7 +37,7 @@ type HomeData = {
   mystery: MediaPage;
 };
 type Watching = { anime: StreamingAnime; watched: number; total: number | null };
-type PageMode = "home" | "discover" | "library";
+type PageMode = "home" | "discover" | "library" | "legacy" | "public";
 type Props = {
   children: ReactNode;
   onAddAnime?: (anime: StreamingAnime) => void;
@@ -314,7 +315,15 @@ export default function StreamingHome({ children, onAddAnime, onOpenAnime, isAni
   const [reload, setReload] = useState(0);
   const [heroIndex, setHeroIndex] = useState(0);
   const [details, setDetails] = useState<StreamingAnime | null>(null);
-  const [mode, setMode] = useState<PageMode>("home");
+  const account = useTrackerAccount();
+  const [authOpen, setAuthOpen] = useState(false);
+  const [sharedUsername, setSharedUsername] = useState<string | null>(() => new URLSearchParams(window.location.search).get("perfil"));
+  const [mode, setMode] = useState<PageMode>(() => new URLSearchParams(window.location.search).has("perfil") ? "public" : "home");
+  const [chosenStatus, setChosenStatus] = useState<LibraryStatus>("planned");
+  const [chosenEpisodes, setChosenEpisodes] = useState(0);
+  const [savingAnime, setSavingAnime] = useState(false);
+  const [saveError, setSaveError] = useState("");
+  const [saveMessage, setSaveMessage] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [searchData, setSearchData] = useState<StreamingAnime[]>([]);
@@ -323,6 +332,15 @@ export default function StreamingHome({ children, onAddAnime, onOpenAnime, isAni
   const [watching, setWatching] = useState<Watching[]>(readWatching);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const latestSearch = useRef(0);
+  useEffect(() => {
+    const handlePop = () => {
+      const slug = new URLSearchParams(window.location.search).get("perfil");
+      setSharedUsername(slug);
+      setMode(slug ? "public" : "home");
+    };
+    window.addEventListener("popstate", handlePop);
+    return () => window.removeEventListener("popstate", handlePop);
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -421,11 +439,21 @@ export default function StreamingHome({ children, onAddAnime, onOpenAnime, isAni
     if (heroes.length > 1) setHeroIndex((index) => (index + direction + heroes.length) % heroes.length);
   };
   const openAnime = (anime: StreamingAnime) => {
+    const saved = account.entries.find(item => item.anime_id === anime.id);
+    setChosenStatus(saved?.status || "planned");
+    setChosenEpisodes(saved?.watched_episodes || 0);
+    setSaveError(""); setSaveMessage("");
     setSearchOpen(false);
     if (onOpenAnime) onOpenAnime(anime);
     else setDetails(anime);
   };
   const navigate = (target: PageMode) => {
+    if (window.location.search.includes("perfil=")) {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("perfil");
+      window.history.pushState(null, "", url.pathname + url.search + url.hash);
+      setSharedUsername(null);
+    }
     setMode(target);
     setSearchOpen(false);
     setWatching(readWatching());
@@ -444,6 +472,22 @@ export default function StreamingHome({ children, onAddAnime, onOpenAnime, isAni
   }, [data]);
 
   const selectedSaved = details && isAnimeSaved ? isAnimeSaved(details) : false;
+  const cloudWatching: Watching[] = account.entries.filter(item => item.status === "watching").map(item => ({
+    anime: { id: item.anime_id, title: { romaji: item.anime_title }, bannerImage: item.banner_url,
+      coverImage: { extraLarge: item.cover_url }, episodes: item.total_episodes },
+    watched: item.watched_episodes, total: item.total_episodes,
+  }));
+  const detailsEntry = details ? account.entries.find(item => item.anime_id === details.id) : null;
+  async function saveDetailsAnime() {
+    if (!details) return;
+    setSavingAnime(true); setSaveError(""); setSaveMessage("");
+    try {
+      await account.saveAnime({ id: details.id, title: titleOf(details), cover: posterOf(details),
+        banner: details.bannerImage || null, total: details.episodes || null }, chosenStatus, chosenEpisodes);
+      setSaveMessage("Anime salvo na sua biblioteca!");
+    } catch (cause) { setSaveError(cause instanceof Error ? cause.message : "Erro ao salvar anime."); }
+    finally { setSavingAnime(false); }
+  }
   return (
     <div className="at-shell" id="inicio">
       <aside className="at-sidebar" aria-label="Menu principal">
@@ -455,14 +499,14 @@ export default function StreamingHome({ children, onAddAnime, onOpenAnime, isAni
         <nav className="at-navigation" aria-label="Navegação">
           <button type="button" className={`at-nav-link${mode === "home" ? " at-nav-active" : ""}`} onClick={() => navigate("home")}><Icon name="home"/><span>Início</span></button>
           <button type="button" className={`at-nav-link${mode === "discover" ? " at-nav-active" : ""}`} onClick={() => navigate("discover")}><Icon name="compass"/><span>Descobrir</span></button>
-          <button type="button" className={`at-nav-link${mode === "library" ? " at-nav-active" : ""}`} onClick={() => navigate("library")}><Icon name="bookmark"/><span>Minha lista</span></button>
+          <button type="button" className={`at-nav-link${mode === "library" || mode === "public" ? " at-nav-active" : ""}`} onClick={() => navigate("library")}><Icon name="bookmark"/><span>Minha lista</span></button>
         </nav>
         <div className="at-sidebar-footer"><span className="at-live-dot"/> Seu próximo anime está aqui.</div>
       </aside>
 
       <main className="at-main">
         <header className="at-topbar">
-          <div className="at-topbar-breadcrumb">ANIME TRACKER <b>/</b> {mode === "library" ? "Minha lista" : mode === "discover" ? "Descobrir" : "Página inicial"}</div>
+          <div className="at-topbar-breadcrumb">ANIME TRACKER <b>/</b> {mode === "public" ? "Perfil compartilhado" : mode === "library" ? "Minha lista" : mode === "legacy" ? "Biblioteca anterior" : mode === "discover" ? "Descobrir" : "Página inicial"}</div>
           <div className="at-topbar-actions">
             <div className={`at-search-widget${searchOpen ? " is-open" : ""}`}>
               <button className="at-search-trigger" type="button" onClick={() => searchOpen ? closeSearch() : setSearchOpen(true)} aria-label={searchOpen ? "Fechar pesquisa" : "Pesquisar animes"} aria-expanded={searchOpen} aria-controls="at-search-input">
@@ -470,7 +514,8 @@ export default function StreamingHome({ children, onAddAnime, onOpenAnime, isAni
               </button>
               <input id="at-search-input" ref={inputRef} type="search" placeholder="Pesquisar animes..." autoComplete="off" value={searchText} tabIndex={searchOpen ? 0 : -1} onChange={(event: ChangeEvent<HTMLInputElement>) => setSearchText(event.target.value)} aria-label="Pesquisar animes"/>
             </div>
-            <button className="at-library-link" type="button" onClick={() => navigate("library")}><Icon name="bookmark" size={16}/> <span>Minha lista</span></button>
+            <button className="at-library-link" type="button" onClick={() => navigate("library")} aria-label="Abrir minha lista" title="Minha lista"><Icon name="bookmark" size={22}/></button>
+            <AvatarMenu account={account} onSignIn={() => setAuthOpen(true)} onProfile={() => navigate("library")}/>
           </div>
           {searchOpen && searchText.trim().length > 1 && <div className="at-search-popover" role="region" aria-label="Resultados da pesquisa">
             <div className="at-search-caption">{searchBusy ? "Pesquisando..." : searchError ? "Erro ao pesquisar. Tente novamente." : `Resultados para “${searchText.trim()}”`}</div>
@@ -481,7 +526,9 @@ export default function StreamingHome({ children, onAddAnime, onOpenAnime, isAni
           </div>}
         </header>
 
-        {mode === "library" ? (
+        {mode === "library" || mode === "public" ? (
+          <ProfilePage account={account} sharedUsername={mode === "public" ? sharedUsername : null} onSignIn={() => setAuthOpen(true)} onOpenLegacy={() => navigate("legacy")}/>
+        ) : mode === "legacy" ? (
           <section className="at-library-section" id="minha-lista">
             <div className="at-section-heading at-library-heading"><div><span className="at-eyebrow">SEU ESPAÇO</span><h1>Minha lista</h1></div><p>Organize os títulos, episódios e avaliações salvos neste navegador.</p></div>
             <div className="at-existing-app">{children}</div>
@@ -520,7 +567,7 @@ export default function StreamingHome({ children, onAddAnime, onOpenAnime, isAni
                 </div>
                 {nextHero ? <button className="at-hero-preview at-hero-preview--next" type="button" onClick={() => changeHero(1)} aria-label={`Próximo destaque: ${titleOf(nextHero)}`}><img src={heroImageOf(nextHero)} alt=""/><span className="at-hero-preview-symbol">›</span></button> : <div className="at-hero-preview at-hero-preview--empty"/>}
               </section>
-              <ContinueRail watching={watching} openLibrary={() => navigate("library")}/>
+              <ContinueRail watching={account.user ? cloudWatching : watching} openLibrary={() => navigate("library")}/>
             </>}
             {loading && <div className="at-loading" role="status"><span className="at-loading-line"/> Carregando o catálogo atualizado...</div>}
             {error && <div className="at-error" role="alert"><span>{error}</span><button type="button" onClick={() => setReload((v) => v + 1)}>Tentar novamente</button></div>}
@@ -541,6 +588,7 @@ export default function StreamingHome({ children, onAddAnime, onOpenAnime, isAni
         <footer className="at-page-footer">ANIME TRACKER <span>•</span> DESCUBRA. ORGANIZE. ACOMPANHE.</footer>
       </main>
 
+      {authOpen && <AuthDialog onClose={() => setAuthOpen(false)}/>}
       {details && <div className="at-modal-backdrop" onMouseDown={(event: ReactMouseEvent<HTMLDivElement>) => { if (event.target === event.currentTarget) setDetails(null); }}>
         <section className="at-modal" role="dialog" aria-modal="true" aria-label={`Detalhes de ${titleOf(details)}`}>
           <button type="button" className="at-modal-close" aria-label="Fechar" onClick={() => setDetails(null)}>×</button>
@@ -549,11 +597,24 @@ export default function StreamingHome({ children, onAddAnime, onOpenAnime, isAni
             <div className="at-modal-meta">{details.seasonYear && <span>{details.seasonYear}</span>}<span>{formatOf(details)}</span>{details.episodes && <span>{details.episodes} episódios</span>}{ratingOf(details) && <span>★ {ratingOf(details)}</span>}</div>
             <p>{summaryOf(details.description, 1300) || "Sinopse indisponível."}</p>
             <div className="at-modal-tags">{details.genres?.slice(0,5).map((genre) => <span key={genre}>{genre}</span>)}</div>
-            <div className="at-modal-actions">
-              {onAddAnime ? <button className="at-btn at-btn-primary" type="button" disabled={Boolean(selectedSaved)} onClick={() => onAddAnime(details)}>{selectedSaved ? "Já está na minha lista" : "+ Adicionar à minha lista"}</button>
-                : <button className="at-btn at-btn-primary" type="button" onClick={() => { setDetails(null); navigate("library"); }}>Abrir minha lista</button>}
+            {account.user ? <div className="at-status-panel">
+              <span className="at-account-kicker">ADICIONAR À SUA BIBLIOTECA {detailsEntry ? '• JÁ SALVO' : ''}</span>
+              <div className="at-status-action-grid">
+                {([['watching', '▶ Assistindo'], ['completed', '✓ Concluído'], ['planned', '＋ Assistir mais tarde']] as [LibraryStatus,string][]).map(([status, label]) =>
+                  <button type="button" className={chosenStatus === status ? 'active' : ''} key={status} onClick={() => setChosenStatus(status)} aria-pressed={chosenStatus === status}>{label}<span>{chosenStatus === status ? '●' : '○'}</span></button>)}
+              </div>
+              {chosenStatus === 'watching' && <label>Episódios assistidos <input type="number" min={0} max={details.episodes || undefined} value={chosenEpisodes} onChange={e => setChosenEpisodes(Math.max(0, Number(e.target.value) || 0))}/>{details.episodes ? ` / ${details.episodes}` : ''}</label>}
+              {saveError && <div className="at-account-error" role="alert">{saveError}</div>}
+              {saveMessage && <div className="at-account-info" role="status">{saveMessage}</div>}
+              <div className="at-status-panel-actions">
+                <button className="at-btn at-btn-primary" type="button" disabled={savingAnime} onClick={() => void saveDetailsAnime()}>{savingAnime ? 'Salvando...' : 'Salvar na minha lista'}</button>
+                <a className="at-btn at-btn-outline" href={`https://anilist.co/anime/${details.id}`} target="_blank" rel="noopener noreferrer">Ver no AniList ↗</a>
+              </div>
+            </div> : <div className="at-modal-actions">
+              <button className="at-btn at-btn-primary" type="button" onClick={() => setAuthOpen(true)}>Entre para salvar na sua lista</button>
               <a className="at-btn at-btn-outline" href={`https://anilist.co/anime/${details.id}`} target="_blank" rel="noopener noreferrer">Ver no AniList ↗</a>
-            </div>
+              {onAddAnime && <button className="at-btn at-btn-outline" disabled={Boolean(selectedSaved)} type="button" onClick={() => onAddAnime(details)}>{selectedSaved ? 'Salvo localmente' : 'Adicionar à biblioteca antiga'}</button>}
+            </div>}
           </div>
         </section>
       </div>}
