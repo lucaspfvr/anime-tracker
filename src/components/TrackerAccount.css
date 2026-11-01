@@ -102,3 +102,38 @@
 .at-profile-poster-button img { transition: transform .25s ease; }
 .at-profile-title-link { border: 0; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; padding: 0; }
 .at-profile-title-link:hover { color: #ff9c6d; }
+
+/* Etapa 7: indicador de aba com layout spring (Motion para React). */
+.at-profile-tabs button { position: relative; }
+.at-profile-tabs button.active { border-bottom-color: transparent; }
+.at-profile-tabs button .at-profile-tab-line {
+  display: block; position: absolute; height: 3px;
+  bottom: -3px; left: 0; right: 0;
+  margin: 0; padding: 0; border: none; border-radius: 5px;
+  background: #ff6a30; pointer-events: none;
+}
+.at-profile-card { will-change: transform; }
+@media (prefers-reduced-motion: reduce) { .at-profile-card { will-change: auto; } }
+
+/* Etapa 8 — foto de perfil sempre recortada dentro de uma moldura circular. */
+.at-profile-header { z-index: 2; }
+.at-profile-avatar {
+  width: 116px !important; height: 116px !important; min-width: 116px; min-height: 116px;
+  max-width: 116px; max-height: 116px; flex: 0 0 116px !important;
+  border-radius: 50% !important; box-sizing: border-box;
+  overflow: hidden !important; isolation: isolate;
+  padding: 0; line-height: 1;
+}
+.at-profile-avatar img {
+  display: block !important; width: 100% !important; height: 100% !important;
+  min-width: 0 !important; min-height: 0 !important; max-width: 100% !important; max-height: 100% !important;
+  object-fit: cover !important; object-position: center center;
+  border-radius: 50%; overflow: hidden;
+}
+.at-avatar-btn { box-sizing: border-box; flex: 0 0 39px; min-width: 39px; max-width: 39px; overflow: hidden !important; }
+.at-avatar-img { width: 100% !important; height: 100% !important; max-width: 100% !important; max-height: 100% !important; object-fit: cover !important; }
+@media (max-width: 560px) {
+  .at-profile-avatar { width: 88px !important; height: 88px !important; min-width: 88px; min-height: 88px; max-width: 88px; max-height: 88px; flex-basis: 88px !important; }
+}
+
+.at-profile-avatar img { position: absolute; inset: 0; }

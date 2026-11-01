@@ -131,8 +131,7 @@ body:has(.at-shell) {
 .at-hero-preview--empty { visibility: hidden; pointer-events: none; }
 .at-hero { position: relative; display: flex; align-items: flex-end; min-width: 0; width: 100%; height: 100%; border-radius: 14px; isolation: isolate; overflow: hidden; background: radial-gradient(ellipse at 81% 30%, rgba(255,102,30,.29), transparent 41%), linear-gradient(115deg,#24140f,#151316 65%,#1e1110); border: 1px solid rgba(255,255,255,.08); box-shadow: 0 20px 56px rgba(0,0,0,.32); }
 .at-hero-image { position: absolute; inset: 0; z-index: -2; }
-.at-hero-image img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center 42%; opacity: .95; animation: at-hero-fade .36s ease both; }
-@keyframes at-hero-fade { from { opacity: .25; transform: scale(1.035); } to { opacity: .95; transform: scale(1); } }
+.at-hero-image img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center 42%; opacity: .95; }
 .at-hero::after { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(90deg, rgba(9,9,12,.97) 0%, rgba(9,9,12,.84) 29%, rgba(9,9,12,.27) 77%, rgba(9,9,12,.12) 100%), linear-gradient(0deg, rgba(9,9,12,.91), transparent 38%, rgba(9,9,12,.12)); }
 .at-hero-nav { position: absolute; top: 50%; z-index: 3; width: 39px; height: 52px; transform: translateY(-50%); padding: 0; border: 1px solid rgba(255,255,255,.27); border-radius: 11px; background: rgba(9,9,12,.55); color: #fff; font-size: 34px; line-height: 1; backdrop-filter: blur(9px); transition: background .2s, border-color .2s; }
 .at-hero-nav:hover { background: rgba(255,93,34,.89); border-color: rgba(255,150,85,.95); }
@@ -455,14 +454,7 @@ body:has(.at-shell) {
 @media(max-width:700px) { .at-topbar .at-library-link { display:grid; } .at-topbar-actions { gap: 5px; } .at-topbar:has(.at-search-widget.is-open) .at-library-link { display:none; } }
 
 /* Etapa 6: transições mais suaves, botões de trailer e plataformas */
-.at-hero-copy { animation: at-slide-copy .38s cubic-bezier(.19,1,.22,1) both; }
-@keyframes at-slide-copy { from { opacity: .15; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
-.at-hero-preview img { animation: at-neighbor-slide .4s ease both; }
-@keyframes at-neighbor-slide { from { opacity: .18; transform: scale(1.1); } to { opacity: 1; transform: scale(1); } }
-.at-poster-card { transition: transform .22s ease, filter .2s ease; transform-origin: bottom center; }
-.at-poster-card:hover { transform: translateY(-8px) scale(1.026); filter: brightness(1.12); }
-.at-modal { animation: at-details-pop .24s cubic-bezier(.2,.9,.2,1) both; }
-@keyframes at-details-pop { from { opacity: 0; transform: translateY(14px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+.at-poster-card { transform-origin: bottom center; }
 .at-details-subtitle { font-size: 15px; font-weight: 900; margin: 19px 0 7px; }
 .at-details-synopsis { white-space: pre-line; }
 .at-trailer-actions { margin-top: 14px; display: flex; gap: 10px; flex-wrap: wrap; }
@@ -472,53 +464,280 @@ body:has(.at-shell) {
 .at-streaming-providers { display: flex; flex-wrap: wrap; gap: 9px; }
 .at-streaming-provider { color: #fff; display: inline-flex; gap: 10px; align-items: center; border: 1px solid #51413c; border-radius: 8px; background: #251d1b; padding: 10px 12px; font-size: 12px; font-weight: 700; text-decoration: none; transition: background .18s ease, transform .18s ease; }
 .at-streaming-provider:hover { background: #593022; transform: translateY(-2px); }
-@media (prefers-reduced-motion: reduce) { .at-hero-copy, .at-hero-preview img, .at-modal { animation: none !important; } .at-poster-card:hover { transform: none; } }
 
-/* Sentido do movimento do carrossel, 9 s entre destaques; pausa no hover/foco */
-.at-slide-next .at-hero-image img { animation: at-hero-enter-next .55s cubic-bezier(.22,.75,.27,1) both; }
-.at-slide-prev .at-hero-image img { animation: at-hero-enter-prev .55s cubic-bezier(.22,.75,.27,1) both; }
-.at-slide-next .at-hero-copy { animation-name: at-slide-copy-next; }
-.at-slide-prev .at-hero-copy { animation-name: at-slide-copy-prev; }
-@keyframes at-hero-enter-next { from { opacity: .3; transform: translateX(3%) scale(1.04); } to { opacity: .95; transform: translateX(0) scale(1); } }
-@keyframes at-hero-enter-prev { from { opacity: .3; transform: translateX(-3%) scale(1.04); } to { opacity: .95; transform: translateX(0) scale(1); } }
-@keyframes at-slide-copy-next { from { opacity: .3; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
-@keyframes at-slide-copy-prev { from { opacity: .3; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
-@media (prefers-reduced-motion: reduce) { .at-slide-next .at-hero-image img, .at-slide-prev .at-hero-image img, .at-hero-copy { animation: none !important; } }
 
-/* Etapa 6.1 — deslize real do carrossel. O banner anterior continua na tela
-   durante a transição, enquanto o novo entra da direção escolhida. */
-.at-hero-image { width: 100%; height: 100%; }
-.at-hero-image img { width: 100%; height: 100%; }
-.at-hero-is-moving .at-hero-image { pointer-events: none; }
-.at-hero-is-moving.at-slide-next .at-hero-image:not(.at-hero-image--leaving) img {
-  animation: at-carousel-enter-right .7s cubic-bezier(.45,0,.55,1) both;
+/* Etapa 7 — Animação comandada pelo React (Motion).
+   Regras antigas de @keyframes ficam desativadas neste componente.
+   O spring, as direções e a interrupção de transições pertencem ao JS. */
+.at-hero-carousel .at-hero-image,
+.at-hero-carousel .at-hero-copy { will-change: transform, opacity; }
+.at-hero-carousel .at-hero-image img,
+.at-hero-carousel .at-hero-copy,
+.at-hero-carousel .at-hero-preview img { animation: none !important; }
+.at-hero-carousel .at-hero-image { inset: 0; width: 100%; height: 100%; }
+.at-hero-carousel .at-hero-copy {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  pointer-events: auto;
 }
-.at-hero-is-moving.at-slide-next .at-hero-image--leaving img {
-  animation: at-carousel-exit-left .7s cubic-bezier(.45,0,.55,1) both;
+.at-hero-carousel .at-hero-preview img {
+  position: absolute;
+  inset: 0;
+  width: 100%; height: 100%;
 }
-.at-hero-is-moving.at-slide-prev .at-hero-image:not(.at-hero-image--leaving) img {
-  animation: at-carousel-enter-left .7s cubic-bezier(.45,0,.55,1) both;
-}
-.at-hero-is-moving.at-slide-prev .at-hero-image--leaving img {
-  animation: at-carousel-exit-right .7s cubic-bezier(.45,0,.55,1) both;
-}
-/* Sem lacunas visíveis entre as imagens durante o deslocamento. */
-@keyframes at-carousel-enter-right { from { transform: translate3d(100%,0,0); opacity: 1; } to { transform: translate3d(0,0,0); opacity: 1; } }
-@keyframes at-carousel-exit-left { from { transform: translate3d(0,0,0); opacity: 1; } to { transform: translate3d(-100%,0,0); opacity: 1; } }
-@keyframes at-carousel-enter-left { from { transform: translate3d(-100%,0,0); opacity: 1; } to { transform: translate3d(0,0,0); opacity: 1; } }
-@keyframes at-carousel-exit-right { from { transform: translate3d(0,0,0); opacity: 1; } to { transform: translate3d(100%,0,0); opacity: 1; } }
-.at-hero-is-moving .at-hero-copy { animation-duration: .52s; animation-fill-mode: both; animation-delay: .17s; }
-.at-hero-is-moving.at-slide-next .at-hero-copy { animation-name: at-carousel-copy-right; }
-.at-hero-is-moving.at-slide-prev .at-hero-copy { animation-name: at-carousel-copy-left; }
-@keyframes at-carousel-copy-right { from { transform: translate3d(38px,0,0); opacity: 0; } to { transform: translate3d(0,0,0); opacity: 1; } }
-@keyframes at-carousel-copy-left { from { transform: translate3d(-38px,0,0); opacity: 0; } to { transform: translate3d(0,0,0); opacity: 1; } }
-.at-hero-is-moving .at-hero-preview img { animation-duration: .7s; animation-fill-mode: both; }
-.at-hero-is-moving.at-slide-next .at-hero-preview--previous img { animation-name: at-carousel-neighbor-from-right; }
-.at-hero-is-moving.at-slide-prev .at-hero-preview--next img { animation-name: at-carousel-neighbor-from-left; }
-@keyframes at-carousel-neighbor-from-right { from { opacity: 0; transform: translate3d(70%,0,0) scale(1.1); } to { opacity: 1; transform: translate3d(0,0,0) scale(1); } }
-@keyframes at-carousel-neighbor-from-left { from { opacity: 0; transform: translate3d(-70%,0,0) scale(1.1); } to { opacity: 1; transform: translate3d(0,0,0) scale(1); } }
+.at-hero-carousel .at-hero-preview-symbol { pointer-events: none; }
+.at-hero-carousel .at-hero::after { pointer-events: none; }
+.at-hero-carousel .at-hero { cursor: grab; user-select: none; }
+.at-hero-carousel .at-hero:active { cursor: grabbing; }
+.at-hero-carousel .at-hero-copy button { cursor: pointer; }
+.at-poster-card:hover { transform: none; filter: none; }
+.at-poster-card:hover .at-poster-art img { transform: none; }
+.at-modal { animation: none !important; }
 @media (prefers-reduced-motion: reduce) {
-  .at-hero-is-moving .at-hero-image img,
-  .at-hero-is-moving .at-hero-copy,
-  .at-hero-is-moving .at-hero-preview img { animation: none !important; }
+  .at-rail-section { scroll-behavior: auto; }
+  .at-hero-carousel .at-hero-image, .at-hero-carousel .at-hero-copy { will-change: auto; }
+}
+
+/* O spring do Motion controla o transform, sem uma transição CSS concorrente. */
+.at-poster-card { transition: filter .18s ease; }
+.at-hero-preview { transition: opacity .22s ease, filter .22s ease, border-color .22s ease; }
+
+/* Etapa 7.1 — correção da camada que tornava o slide animado invisível.
+   A ordem deve ser: imagem (0), gradiente (1), texto (2), setas (3). */
+.at-hero-carousel .at-hero { isolation: isolate; }
+.at-hero-carousel .at-hero-image { z-index: 0; overflow: hidden; }
+.at-hero-carousel .at-hero::after { z-index: 1; pointer-events: none; }
+.at-hero-carousel .at-hero-copy { z-index: 2; }
+.at-hero-carousel .at-hero-nav,
+.at-hero-carousel .at-hero-pagination { z-index: 3; }
+.at-hero-carousel .at-hero-image img { user-select: none; pointer-events: none; }
+.at-rail, .at-continue-list { scroll-behavior: auto; }
+
+/* Etapa 8 — controle '+' independente do clique para abrir o anime. */
+.at-poster-shell { position: relative; width: 100%; min-width: 0; scroll-snap-align: start; }
+.at-poster-shell .at-poster-card { scroll-snap-align: none; }
+.at-poster-quick-add {
+  position: absolute; z-index: 5; top: 9px; right: 9px;
+  display: grid; place-items: center; width: 36px; height: 36px; padding: 0;
+  border-radius: 50%; border: 1px solid rgba(255,255,255,.42);
+  background: rgba(10,10,14,.88); backdrop-filter: blur(9px);
+  color: white; font-size: 25px; font-weight: 450; line-height: 1;
+  box-shadow: 0 3px 14px #0007; cursor: pointer;
+  transition: background .18s ease, transform .18s ease, border-color .18s ease;
+}
+.at-poster-quick-add:hover, .at-poster-quick-add:focus-visible { background: #ff6429; border-color: #ff9f6d; transform: scale(1.12); outline-offset: 3px; }
+.at-poster-quick-add.is-saved { background: #fe642d; border-color: #ff995d; font-size: 17px; }
+.at-quick-menu {
+  position: fixed; z-index: 250; width: 254px; max-width: calc(100vw - 24px);
+  max-height: calc(100dvh - 24px); overflow-y: auto;
+  border: 1px solid #4a3931; border-radius: 14px; padding: 11px;
+  background: #1b191d; color: #fff; box-shadow: 0 20px 60px #000c;
+}
+.at-quick-menu-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 13px; }
+.at-quick-menu-head button { border: 0; background: none; color: #ddd; font-size: 21px; cursor: pointer; }
+.at-quick-menu p { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 8px 2px; color: #bfb9c3; font-size: 12px; }
+.at-quick-menu > button { width: 100%; padding: 12px 10px; margin-top: 4px; border-radius: 8px; border: 1px solid transparent; background: #29252b; color: #fff; text-align: left; display: flex; justify-content: space-between; gap: 12px; cursor: pointer; }
+.at-quick-menu > button:hover:not(:disabled) { background: #493027; border-color: #ff6429; }
+.at-quick-menu > button:disabled { opacity: .55; }
+.at-quick-menu > button span { color: #ff915d; }
+.at-quick-menu small { display: block; padding: 7px 1px; color: #d4cbcf; }
+.at-quick-menu .at-quick-error { color: #ffa698; }
+.at-quick-notice { position: fixed; z-index: 255; bottom: 24px; right: 24px; max-width: min(400px, calc(100vw - 32px)); padding: 12px 16px; border-radius: 10px; background: #222422; border: 1px solid #54705b; color: #dcffe8; box-shadow: 0 12px 35px #000a; font-size: 13px; }
+
+/* Sinopse abre em painel independente: não empurra os controles de salvar. */
+.at-open-synopsis { display: flex; align-items: center; gap: 13px; width: 100%; padding: 13px 15px; margin: 17px 0 10px; color: #fff; text-align: left; cursor: pointer; border: 1px solid #494049; border-radius: 11px; background: #201f23; }
+.at-open-synopsis:hover { border-color: #ff743b; background: #292025; }
+.at-open-synopsis-icon { width: 34px; height: 34px; flex: none; display: grid; place-items: center; border-radius: 9px; color: #ff8d5c; background: #3c2924; }
+.at-open-synopsis > span:nth-child(2) { flex: 1; display: grid; gap: 3px; }
+.at-open-synopsis small { color: #b8b3bc; font-size: 11px; }
+.at-synopsis-overlay { position: fixed; inset: 0; z-index: 210; background: rgba(3,3,6,.88); display: grid; place-items: center; padding: 20px; backdrop-filter: blur(11px); }
+.at-synopsis-dialog { width: min(900px,100%); max-height: min(760px,90dvh); display: grid; grid-template-columns: minmax(175px,31%) minmax(0,1fr); border-radius: 18px; background: #18171b; border: 1px solid #42383d; box-shadow: 0 25px 85px #000d; position: relative; overflow: hidden; }
+.at-synopsis-poster { align-self: stretch; min-height: 400px; background: #272026; overflow: hidden; }
+.at-synopsis-poster img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center top; }
+.at-synopsis-content { min-width: 0; padding: 38px 32px; overflow-y: auto; overscroll-behavior: contain; max-height: min(760px,90dvh); }
+.at-synopsis-content h2 { margin: 7px 0 20px; font-size: clamp(23px, 3vw, 35px); line-height: 1.2; }
+.at-synopsis-content h3 { color: #ff9b68; font-size: 13px; text-transform: uppercase; letter-spacing: .08em; }
+.at-synopsis-content p { color: #dfdae2; line-height: 1.85; font-size: 14px; white-space: pre-line; overflow-wrap: anywhere; }
+.at-synopsis-content small { display: block; color: #aba7ad; font-size: 11px; }
+.at-synopsis-close { position: absolute; z-index: 2; right: 15px; top: 15px; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; border: 1px solid #ffffff55; background: #0c0b0dd9; color: white; font-size: 23px; cursor: pointer; }
+.at-synopsis-close:hover { background: #ff6429; }
+.at-modal .at-status-panel { margin: 12px 0 16px; padding: 14px; border: 1px solid #3a3337; border-radius: 12px; background: #19181c; }
+.at-modal .at-trailer-actions { margin-top: 15px; }
+@media(max-width:600px) {
+  .at-poster-quick-add { top: 7px; right: 7px; width: 34px; height: 34px; }
+  .at-synopsis-dialog { display: flex; flex-direction: column; max-height: 92dvh; }
+  .at-synopsis-poster { height: 190px; min-height: 190px; }
+  .at-synopsis-poster img { object-fit: cover; object-position: 50% 30%; }
+  .at-synopsis-content { padding: 22px; max-height: calc(92dvh - 190px); }
+}
+@media(prefers-reduced-motion:reduce) {
+  .at-poster-quick-add { transition: none; }
+}
+
+
+/* ETAPA 9 — menu lateral recolhível com layout reativo e animação pelo Motion.
+   O próprio grid distribui a largura disponível: o conteúdo acompanha o menu a cada frame. */
+.at-shell {
+  display: grid;
+  grid-template-columns: 238px minmax(0, 1fr);
+  align-items: start;
+  width: 100%;
+  overflow-x: clip;
+}
+.at-shell > .at-sidebar {
+  position: sticky;
+  inset: auto;
+  top: 0;
+  width: 100%;
+  min-width: 0;
+  height: 100dvh;
+  padding: 24px 12px 20px;
+  overflow: hidden;
+}
+.at-shell > .at-main {
+  grid-column: 2;
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0;
+  margin: 0 !important;
+}
+.at-side-header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 7px;
+  min-height: 44px;
+  margin-bottom: 59px;
+  white-space: nowrap;
+}
+.at-sidebar-toggle {
+  display: grid;
+  place-items: center;
+  flex: 0 0 38px;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #c9c9d1;
+}
+.at-sidebar-toggle svg { flex: 0 0 auto; }
+.at-shell .at-brand {
+  flex: 0 1 auto;
+  min-width: 0;
+  margin: 0;
+  gap: 8px;
+  overflow: hidden;
+  transition: opacity .24s ease, max-width .34s cubic-bezier(.22,1,.36,1);
+}
+.at-shell .at-brand-glyph {
+  width: 36px;
+  height: 38px;
+  font-size: 23px;
+  flex: 0 0 36px;
+}
+.at-shell .at-brand-copy strong { font-size: 12px; }
+.at-shell .at-brand-copy small { font-size: 7px; letter-spacing: .14em; }
+.at-shell .at-sidebar-label { padding: 0 14px; }
+.at-shell .at-nav-link {
+  display: flex;
+  flex: 0 0 auto;
+  min-width: 0;
+  width: 100%;
+  padding: 0 12px;
+  gap: 13px;
+  overflow: hidden;
+  white-space: nowrap;
+  transition: color .18s ease, background .18s ease;
+}
+.at-shell .at-nav-link svg { flex: 0 0 20px; }
+.at-shell .at-nav-text {
+  display: inline-block;
+  min-width: 0;
+  opacity: 1;
+  overflow: hidden;
+  transition: max-width .32s cubic-bezier(.22,1,.36,1), opacity .14s ease;
+  max-width: 140px;
+}
+.at-shell .at-mini-label { display: none; }
+.at-shell .at-sidebar-footer { white-space: nowrap; font-size: 9px; padding-left: 6px; }
+
+/* Rail compacta como a navegação do YouTube: ícone com legenda pequena. */
+.at-shell--collapsed > .at-sidebar { padding-left: 7px; padding-right: 7px; }
+.at-shell--collapsed .at-side-header { justify-content: center; }
+.at-shell--collapsed .at-brand { flex-basis: 0; max-width: 0; opacity: 0; pointer-events: none; }
+.at-shell--collapsed .at-sidebar-label,
+.at-shell--collapsed .at-sidebar-footer { display: none; }
+.at-shell--collapsed .at-navigation { align-items: stretch; gap: 9px; }
+.at-shell--collapsed .at-nav-link {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  height: 68px;
+  padding: 7px 2px;
+  border-radius: 12px;
+}
+.at-shell--collapsed .at-nav-text { max-width: 0; opacity: 0; height: 0; }
+.at-shell--collapsed .at-mini-label {
+  display: block;
+  font-size: 9px;
+  font-weight: 550;
+  line-height: 1.2;
+  letter-spacing: -.015em;
+  white-space: nowrap;
+}
+
+/* Telas médias: mantém o botão e o estado definido pelo usuário, sem fechar à força. */
+@media (max-width: 1050px) and (min-width: 701px) {
+  .at-shell > .at-sidebar { padding: 24px 9px 20px; }
+  .at-shell .at-brand { display: flex; }
+  .at-shell .at-brand-copy { display: flex; }
+  .at-shell .at-sidebar-label { display: block; }
+  .at-shell .at-sidebar-footer { display: flex; }
+  .at-shell .at-navigation { align-items: stretch; }
+  .at-shell .at-nav-text { display: inline-block; }
+  .at-shell .at-nav-link { justify-content: flex-start; height: 46px; padding: 0 10px; }
+  .at-shell--collapsed .at-sidebar-label,
+  .at-shell--collapsed .at-sidebar-footer { display: none; }
+  .at-shell--collapsed .at-nav-link { justify-content: center; height: 68px; padding: 7px 2px; }
+}
+/* Em celulares, mantém navegação horizontal no topo, sem o botão de recolher. */
+@media (max-width: 700px) {
+  .at-shell { display: block; overflow-x: clip; }
+  .at-shell > .at-sidebar {
+    position: sticky;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 62px;
+    padding: 8px 16px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    overflow: visible;
+  }
+  .at-side-header { min-height: auto; margin: 0; }
+  .at-sidebar-toggle { display: none; }
+  .at-shell .at-brand { display: flex; max-width: none; opacity: 1; pointer-events: auto; }
+  .at-shell .at-brand-glyph { width: 35px; height: 36px; flex-basis: 35px; font-size: 22px; }
+  .at-shell .at-brand-copy { display: flex; }
+  .at-shell .at-sidebar-label, .at-shell .at-sidebar-footer { display: none; }
+  .at-shell .at-navigation { flex-direction: row; align-items: center; gap: 4px; }
+  .at-shell .at-nav-link,
+  .at-shell--collapsed .at-nav-link {
+    flex-direction: row;
+    justify-content: center;
+    width: 39px;
+    height: 39px;
+    padding: 0;
+  }
+  .at-shell .at-nav-text, .at-shell .at-mini-label { display: none; }
+  .at-shell > .at-main { grid-column: auto; width: 100% !important; margin: 0 !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .at-shell .at-brand, .at-shell .at-nav-text { transition: none; }
 }

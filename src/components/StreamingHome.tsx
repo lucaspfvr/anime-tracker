@@ -1,4 +1,7 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode, type ChangeEvent, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode, type ChangeEvent, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from "react";
+import { AnimatePresence, MotionConfig, motion, useReducedMotion } from "motion/react";
+import { createPortal } from "react-dom";
+import { animate } from "motion";
 import "./StreamingHome.css";
 import { AuthDialog, AvatarMenu, ProfilePage, useTrackerAccount, type LibraryStatus, type LibraryEntry } from "./TrackerAccount";
 import { usePortugueseSynopsis, youtubeTrailerId, YoutubeTrailerModal, type AnimeTrailer } from "./AnimeExtras";
@@ -47,6 +50,21 @@ type Props = {
   onAddAnime?: (anime: StreamingAnime) => void;
   onOpenAnime?: (anime: StreamingAnime) => void;
   isAnimeSaved?: (anime: StreamingAnime) => boolean;
+};
+
+// As imagens deslizam com mola; o texto move menos para preservar a leitura.
+// Transforms são animados pelo motor do Motion, não por keyframes CSS.
+// Transição de cinema: JS controla imagens de entrada/saída e a ordem das camadas.
+const heroImageSpring = { type: "spring" as const, stiffness: 105, damping: 22, mass: 1.0 };
+const heroImageVariants = {
+  enter: (direction: number) => ({ x: direction > 0 ? "105%" : "-105%", opacity: .98, scale: 1.035 }),
+  center: { x: "0%", opacity: 1, scale: 1 },
+  exit: (direction: number) => ({ x: direction > 0 ? "-105%" : "105%", opacity: .98, scale: .985 }),
+};
+const heroCopyVariants = {
+  enter: (direction: number) => ({ opacity: 0, x: direction > 0 ? 44 : -44, filter: "blur(5px)" }),
+  center: { opacity: 1, x: 0, filter: "blur(0px)" },
+  exit: (direction: number) => ({ opacity: 0, x: direction > 0 ? -30 : 30, filter: "blur(3px)" }),
 };
 
 const API_URL = "https://graphql.anilist.co";
@@ -239,7 +257,7 @@ function readWatching(): Watching[] {
   }
 }
 
-function Icon({ name, size = 20 }: { name: "home" | "compass" | "bookmark" | "search" | "close" | "arrow"; size?: number }) {
+function Icon({ name, size = 20 }: { name: "home" | "compass" | "bookmark" | "search" | "close" | "arrow" | "menu"; size?: number }) {
   const base = { width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round" as const, strokeLinejoin: "round" as const, "aria-hidden": true as const };
   const shapes = {
     home: <><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1Z"/><path d="M9 21v-7h6v7"/></>,
@@ -248,29 +266,149 @@ function Icon({ name, size = 20 }: { name: "home" | "compass" | "bookmark" | "se
     search: <><circle cx="10.8" cy="10.8" r="7"/><path d="m16 16 5 5"/></>,
     close: <path d="M5 5 19 19M19 5 5 19"/>,
     arrow: <><path d="M4 12h16"/><path d="m14 6 6 6-6 6"/></>,
+    menu: <><path d="M4 6h16M4 12h16M4 18h16"/></>,
   };
   return <svg {...base}>{shapes[name]}</svg>;
 }
 
-function Poster({ anime, onClick, rank }: { anime: StreamingAnime; onClick: () => void; rank?: number }) {
+type QuickAddOpen = (anime: StreamingAnime, anchor: HTMLButtonElement) => void;
+
+function Poster({ anime, onClick, onQuickAdd, saved, rank }: {
+  anime: StreamingAnime;
+  onClick: () => void;
+  onQuickAdd: QuickAddOpen;
+  saved: boolean;
+  rank?: number;
+}) {
   return (
-    <button className={`at-poster-card${rank ? " at-poster-card--ranked" : ""}`} type="button" onClick={onClick} title={titleOf(anime)}>
-      {rank && <span className="at-rank-number" aria-label={`Posição ${rank}`}>{rank}</span>}
-      <span className="at-poster-art">
-        {posterOf(anime) ? <img src={posterOf(anime)} alt="" loading="lazy" /> : <span className="at-poster-fallback">ANIME TRACKER</span>}
-        {ratingOf(anime) && <span className="at-rating">★ {ratingOf(anime)}</span>}
-      </span>
-      <span className="at-poster-title">{titleOf(anime)}</span>
-    </button>
+    <div className="at-poster-shell">
+      <motion.button
+        className={`at-poster-card${rank ? " at-poster-card--ranked" : ""}`}
+        type="button" onClick={onClick} title={`Ver detalhes de ${titleOf(anime)}`}
+        initial={false} whileHover={{ y: -7, scale: 1.02 }} whileTap={{ scale: .98 }}
+        transition={{ type: "spring", stiffness: 400, damping: 28 }}
+      >
+        {rank && <span className="at-rank-number" aria-label={`Posição ${rank}`}>{rank}</span>}
+        <span className="at-poster-art">
+          {posterOf(anime) ? <img src={posterOf(anime)} alt="" loading="lazy" draggable={false} /> : <span className="at-poster-fallback">ANIME TRACKER</span>}
+          {ratingOf(anime) && <span className="at-rating">★ {ratingOf(anime)}</span>}
+        </span>
+        <span className="at-poster-title">{titleOf(anime)}</span>
+      </motion.button>
+      <button className={`at-poster-quick-add${saved ? ' is-saved' : ''}`} type="button"
+        aria-label={`${saved ? 'Alterar lista de' : 'Adicionar'} ${titleOf(anime)}${saved ? '' : ' à minha biblioteca'}`}
+        title={saved ? 'Alterar lista' : 'Adicionar à minha lista'}
+        onClick={(event) => { event.stopPropagation(); onQuickAdd(anime, event.currentTarget); }}
+      >{saved ? '✓' : '+'}</button>
+    </div>
   );
 }
 
-function Rail({ title, eyebrow, items, onSelect, ranked = false }: { title: string; eyebrow?: string; items: StreamingAnime[]; onSelect: (anime: StreamingAnime) => void; ranked?: boolean }) {
+/** Motion anima o scrollLeft numericamente, em vez de depender de scrollBy(smooth).
+ * Desliga scroll-snap enquanto move para evitar que o navegador salte de card em card.
+ * Em toque/trackpad, a rolagem nativa continua disponível. */
+function useAnimatedRailScroll() {
   const listRef = useRef<HTMLDivElement | null>(null);
+  const animationRef = useRef<{ stop: () => void } | null>(null);
+  const gestureRef = useRef<{ id: number; x: number; y: number; scroll: number; moved: boolean } | null>(null);
+  const blockClickRef = useRef(false);
+  const reducedMotion = useReducedMotion();
+  useEffect(() => () => animationRef.current?.stop(), []);
+  const animateTo = (target: number, duration = .76) => {
+    const el = listRef.current;
+    if (!el) return;
+    animationRef.current?.stop();
+    const bounded = Math.max(0, Math.min(el.scrollWidth - el.clientWidth, target));
+    if (reducedMotion) { el.scrollLeft = bounded; el.style.scrollSnapType = ""; return; }
+    el.style.scrollSnapType = "none";
+    animationRef.current = animate(el.scrollLeft, bounded, {
+      duration,
+      ease: [.22, 1, .36, 1],
+      onUpdate: value => { el.scrollLeft = value; },
+      onComplete: () => { el.style.scrollSnapType = ""; animationRef.current = null; },
+    });
+  };
+  const scroll = (direction: number) => {
+    const el = listRef.current;
+    if (!el || !direction) return;
+    const step = Math.max(320, Math.round(el.clientWidth * .78));
+    const first = el.firstElementChild as HTMLElement | null;
+    const gap = parseFloat(getComputedStyle(el).columnGap || "0") || 0;
+    const cardStep = first ? first.getBoundingClientRect().width + gap : 0;
+    const rawTarget = el.scrollLeft + direction * step;
+    const target = cardStep > 0 ? Math.round(rawTarget / cardStep) * cardStep : rawTarget;
+    animateTo(target);
+  };
+  // Em desktop, arrastar os pôsteres funciona como o carrossel dos streamings.
+  // Em dispositivos touch, mantém a rolagem horizontal nativa para preservar o gesto vertical.
+  const dragHandlers = {
+    onPointerDown: (event: ReactPointerEvent<HTMLDivElement>) => {
+      if (event.pointerType !== "mouse" || event.button !== 0) return;
+      const el = listRef.current;
+      if (!el) return;
+      gestureRef.current = { id: event.pointerId, x: event.clientX, y: event.clientY, scroll: el.scrollLeft, moved: false };
+    },
+    onPointerMove: (event: ReactPointerEvent<HTMLDivElement>) => {
+      const el = listRef.current;
+      const gesture = gestureRef.current;
+      if (!el || !gesture || gesture.id !== event.pointerId) return;
+      const deltaX = event.clientX - gesture.x;
+      const deltaY = event.clientY - gesture.y;
+      if (!gesture.moved && Math.abs(deltaX) > 9 && Math.abs(deltaX) > Math.abs(deltaY)) {
+        gesture.moved = true;
+        animationRef.current?.stop();
+        el.style.scrollSnapType = "none";
+        el.style.userSelect = "none";
+        el.setPointerCapture(event.pointerId);
+      }
+      if (gesture.moved) {
+        event.preventDefault();
+        el.scrollLeft = gesture.scroll - deltaX;
+      }
+    },
+    onPointerUp: (event: ReactPointerEvent<HTMLDivElement>) => {
+      const el = listRef.current;
+      const gesture = gestureRef.current;
+      if (!el || !gesture || gesture.id !== event.pointerId) return;
+      gestureRef.current = null;
+      if (!gesture.moved) return;
+      blockClickRef.current = true;
+      // Se o navegador não disparar click após o drag, não bloqueie o próximo clique legítimo.
+      window.setTimeout(() => { blockClickRef.current = false; }, 100);
+      el.style.userSelect = "";
+      if (el.hasPointerCapture(event.pointerId)) el.releasePointerCapture(event.pointerId);
+      const first = el.firstElementChild as HTMLElement | null;
+      const gap = parseFloat(getComputedStyle(el).columnGap || "0") || 0;
+      const step = first ? first.getBoundingClientRect().width + gap : 0;
+      const target = step > 0 ? Math.round(el.scrollLeft / step) * step : el.scrollLeft;
+      animateTo(target, .45);
+    },
+    onPointerCancel: () => {
+      gestureRef.current = null;
+      const el = listRef.current;
+      if (el) { el.style.userSelect = ""; el.style.scrollSnapType = ""; }
+    },
+    onClickCapture: (event: ReactMouseEvent<HTMLDivElement>) => {
+      if (blockClickRef.current) {
+        blockClickRef.current = false;
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    },
+  };
+  return { listRef, scroll, dragHandlers };
+}
+
+function Rail({ title, eyebrow, items, onSelect, onQuickAdd, savedIds, ranked = false }: { title: string; eyebrow?: string; items: StreamingAnime[]; onSelect: (anime: StreamingAnime) => void; onQuickAdd: QuickAddOpen; savedIds: Set<number>; ranked?: boolean }) {
+  const { listRef, scroll, dragHandlers } = useAnimatedRailScroll();
   if (!items.length) return null;
-  const scroll = (direction: number) => listRef.current?.scrollBy({ left: direction * Math.max(320, listRef.current.clientWidth * .8), behavior: "smooth" });
   return (
-    <section className={`at-rail-section${ranked ? " at-rail-section--ranked" : ""}`} aria-label={title}>
+    <motion.section
+      className={`at-rail-section${ranked ? " at-rail-section--ranked" : ""}`} aria-label={title}
+      initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: .12 }}
+      transition={{ duration: .48, ease: [ .22, 1, .36, 1 ] }}
+    >
       <div className="at-section-heading">
         <div>{eyebrow && <span className="at-eyebrow">{eyebrow}</span>}<h2>{title}</h2></div>
         <div className="at-rail-controls">
@@ -278,10 +416,10 @@ function Rail({ title, eyebrow, items, onSelect, ranked = false }: { title: stri
           <button type="button" onClick={() => scroll(1)} aria-label={`Avançar em ${title}`}>›</button>
         </div>
       </div>
-      <div className="at-rail" ref={listRef}>
-        {items.map((anime, index) => <Poster key={anime.id} anime={anime} rank={ranked ? index + 1 : undefined} onClick={() => onSelect(anime)} />)}
+      <div className="at-rail" ref={listRef} {...dragHandlers}>
+        {items.map((anime, index) => <Poster key={anime.id} anime={anime} rank={ranked ? index + 1 : undefined} saved={savedIds.has(anime.id)} onClick={() => onSelect(anime)} onQuickAdd={onQuickAdd} />)}
       </div>
-    </section>
+    </motion.section>
   );
 }
 
@@ -318,15 +456,9 @@ function streamingProviders(anime: StreamingAnime): Provider[] {
   return providers;
 }
 function AnimeDetailsInfo({ anime, loading, unavailable, onTrailer }: { anime: StreamingAnime; loading: boolean; unavailable: boolean; onTrailer: (id: string) => void }) {
-  const synopsis = usePortugueseSynopsis(anime.id, anime.description, 1600);
   const trailerId = youtubeTrailerId(anime.trailer);
   const providers = streamingProviders(anime);
   return <>
-    <h3 className="at-details-subtitle">Sinopse</h3>
-    <p className="at-details-synopsis">{synopsis.text || (loading ? 'Carregando sinopse...' : 'Sinopse ainda não disponível no AniList.')}</p>
-    {synopsis.loading && <span className="at-synopsis-state" role="status">Traduzindo para português...</span>}
-    {synopsis.failed && <span className="at-synopsis-state">Tradução indisponível no momento; exibindo a sinopse original.</span>}
-    {synopsis.translated && <span className="at-synopsis-state">Tradução automática • pode conter imprecisões</span>}
     <div className="at-trailer-actions">
       {trailerId ? <button className="at-btn at-btn-primary" type="button" onClick={() => onTrailer(trailerId)}>▶ Assistir trailer</button>
         : loading ? <span className="at-streaming-muted">Procurando trailer oficial...</span>
@@ -342,18 +474,45 @@ function AnimeDetailsInfo({ anime, loading, unavailable, onTrailer }: { anime: S
   </>;
 }
 
+function AnimeSynopsisOverlay({ anime, onClose }: { anime: StreamingAnime; onClose: () => void }) {
+  const synopsis = usePortugueseSynopsis(anime.id, anime.description, 2500);
+  return createPortal(
+    <motion.div className="at-synopsis-overlay" role="presentation"
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <motion.section className="at-synopsis-dialog" role="dialog" aria-modal="true" aria-labelledby="at-synopsis-title"
+        initial={{ y: 22, opacity: 0, scale: .97 }} animate={{ y: 0, opacity: 1, scale: 1 }} exit={{ y: 12, opacity: 0 }}
+        transition={{ type: 'spring', stiffness: 350, damping: 33 }}>
+        <button className="at-synopsis-close" type="button" autoFocus aria-label="Fechar sinopse" onClick={onClose}>×</button>
+        <div className="at-synopsis-poster">
+          {posterOf(anime) ? <img src={posterOf(anime)} alt={ `Capa de ${titleOf(anime)}` } /> : <span>ANIME TRACKER</span>}
+        </div>
+        <div className="at-synopsis-content">
+          <span className="at-eyebrow">HISTÓRIA DO ANIME</span>
+          <h2 id="at-synopsis-title">{titleOf(anime)}</h2>
+          <h3>Sinopse</h3>
+          <p>{synopsis.text || 'Sinopse ainda não disponível no AniList.'}</p>
+          {synopsis.loading && <small role="status">Traduzindo para português...</small>}
+          {synopsis.failed && <small>Tradução indisponível. Exibindo o texto original.</small>}
+          {synopsis.translated && <small>Tradução automática • pode conter imprecisões.</small>}
+        </div>
+      </motion.section>
+    </motion.div>, document.body
+  );
+}
+
 function ContinueRail({ watching, openLibrary }: { watching: Watching[]; openLibrary: () => void }) {
-  const listRef = useRef<HTMLDivElement | null>(null);
+  const { listRef, scroll, dragHandlers } = useAnimatedRailScroll();
   return (
     <section className="at-continue-section" aria-label="Continuar assistindo">
       <div className="at-section-heading"><div><span className="at-eyebrow">DO SEU JEITO, NO SEU RITMO</span><h2>Continue assistindo</h2></div>
         {watching.length > 2 && <div className="at-rail-controls">
-          <button type="button" onClick={() => listRef.current?.scrollBy({ left: -550, behavior: "smooth" })} aria-label="Voltar">‹</button>
-          <button type="button" onClick={() => listRef.current?.scrollBy({ left: 550, behavior: "smooth" })} aria-label="Avançar">›</button>
+          <button type="button" onClick={() => scroll(-1)} aria-label="Voltar">‹</button>
+          <button type="button" onClick={() => scroll(1)} aria-label="Avançar">›</button>
         </div>}
       </div>
       {watching.length ? (
-        <div className="at-continue-list" ref={listRef}>
+        <div className="at-continue-list" ref={listRef} {...dragHandlers}>
           {watching.map(({ anime, watched, total }) => {
             const progress = total ? Math.min(100, watched / total * 100) : 0;
             return <button type="button" className="at-continue-card" key={anime.id} onClick={openLibrary} title={`Continuar ${titleOf(anime)} na minha lista`}>
@@ -380,17 +539,20 @@ export default function StreamingHome({ children, onAddAnime, onOpenAnime, isAni
   const [error, setError] = useState<string | null>(null);
   const [reload, setReload] = useState(0);
   const [heroIndex, setHeroIndex] = useState(0);
-  const [heroMotion, setHeroMotion] = useState<'next' | 'prev'>('next');
-  // Guarda o destaque anterior até a animação de saída terminar.
-  const [departingHero, setDepartingHero] = useState<StreamingAnime | null>(null);
-  const heroTransitionLocked = useRef(false);
-  const heroTransitionTimer = useRef<number | null>(null);
+  // Direção determina de qual lado a próxima imagem entra e por onde a anterior sai.
+  const [heroDirection, setHeroDirection] = useState(1);
+  const reduceMotion = useReducedMotion();
   const [heroPaused, setHeroPaused] = useState(false);
   const [details, setDetails] = useState<StreamingAnime | null>(null);
   const [richDetails, setRichDetails] = useState<StreamingAnime | null>(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [detailsError, setDetailsError] = useState(false);
   const [trailerId, setTrailerId] = useState<string | null>(null);
+  const [synopsisOpen, setSynopsisOpen] = useState(false);
+  const [quickAdd, setQuickAdd] = useState<{ anime: StreamingAnime; top: number; left: number } | null>(null);
+  const [quickBusy, setQuickBusy] = useState(false);
+  const [quickError, setQuickError] = useState('');
+  const [quickNotice, setQuickNotice] = useState('');
   const account = useTrackerAccount();
   const [authOpen, setAuthOpen] = useState(false);
   const [sharedUsername, setSharedUsername] = useState<string | null>(() => new URLSearchParams(window.location.search).get("perfil"));
@@ -400,6 +562,19 @@ export default function StreamingHome({ children, onAddAnime, onOpenAnime, isAni
   const [savingAnime, setSavingAnime] = useState(false);
   const [saveError, setSaveError] = useState("");
   const [saveMessage, setSaveMessage] = useState("");
+  // Preferência local: menu recolhido/expandido entre sessões, sem alterar a biblioteca.
+  const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(() => {
+    try { return window.localStorage.getItem("anime-tracker:sidebar-collapsed") === "1"; }
+    catch { return false; }
+  });
+  const toggleSidebar = () => {
+    setSidebarCollapsed((collapsed) => {
+      const next = !collapsed;
+      try { window.localStorage.setItem("anime-tracker:sidebar-collapsed", next ? "1" : "0"); }
+      catch { /* preferências indisponíveis; mantém estado nesta aba */ }
+      return next;
+    });
+  };
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [searchData, setSearchData] = useState<StreamingAnime[]>([]);
@@ -443,9 +618,7 @@ export default function StreamingHome({ children, onAddAnime, onOpenAnime, isAni
         if (!controller.signal.aborted) {
           setData(result);
           setHeroIndex(0);
-          heroTransitionLocked.current = false;
-          if (heroTransitionTimer.current !== null) window.clearTimeout(heroTransitionTimer.current);
-          setDepartingHero(null);
+          setHeroDirection(1);
         }
       } catch (cause) {
         if (!controller.signal.aborted) {
@@ -507,13 +680,13 @@ export default function StreamingHome({ children, onAddAnime, onOpenAnime, isAni
   }, [searchOpen, searchText]);
 
   useEffect(() => {
-    if (!details && !searchOpen) return;
+    if (!details && !searchOpen && !quickAdd) return;
     const keyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") { setDetails(null); setTrailerId(null); setSearchOpen(false); }
+      if (event.key === "Escape") { if (synopsisOpen) setSynopsisOpen(false); else { setDetails(null); setTrailerId(null); setSearchOpen(false); setQuickAdd(null); } }
     };
     window.addEventListener("keydown", keyDown);
     return () => window.removeEventListener("keydown", keyDown);
-  }, [details, searchOpen]);
+  }, [details, searchOpen, synopsisOpen, quickAdd]);
 
   const heroes = useMemo(() => {
     const candidates = [...(data?.popular.media || []), ...(data?.trending.media || [])];
@@ -528,28 +701,15 @@ export default function StreamingHome({ children, onAddAnime, onOpenAnime, isAni
   const previousHero = heroes.length > 1 ? heroes[(heroIndex - 1 + heroes.length) % heroes.length] : null;
   const nextHero = heroes.length > 1 ? heroes[(heroIndex + 1) % heroes.length] : null;
   const goToHero = (targetIndex: number, direction: 'next' | 'prev') => {
-    if (heroes.length < 2 || targetIndex === heroIndex || heroTransitionLocked.current) return;
-    setHeroMotion(direction);
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      setHeroIndex(targetIndex);
-      return;
-    }
-    heroTransitionLocked.current = true;
-    setDepartingHero(heroes[heroIndex]);
+    if (heroes.length < 2 || targetIndex === heroIndex) return;
+    // O React atualiza os slides; Motion gerencia o ciclo de entrada/saída,
+    // inclusive durante cliques rápidos, sem travar a navegação com setTimeout.
+    setHeroDirection(direction === 'next' ? 1 : -1);
     setHeroIndex(targetIndex);
-    if (heroTransitionTimer.current !== null) window.clearTimeout(heroTransitionTimer.current);
-    heroTransitionTimer.current = window.setTimeout(() => {
-      heroTransitionLocked.current = false;
-      setDepartingHero(null);
-      heroTransitionTimer.current = null;
-    }, 740);
   };
   const changeHero = (direction: number) => {
     if (heroes.length > 1) goToHero((heroIndex + direction + heroes.length) % heroes.length, direction < 0 ? 'prev' : 'next');
   };
-  useEffect(() => {
-    return () => { if (heroTransitionTimer.current !== null) window.clearTimeout(heroTransitionTimer.current); };
-  }, []);
   useEffect(() => {
     if (mode !== 'home' || heroes.length < 2 || heroPaused || details || searchOpen) return;
     // Ao trocar manualmente, reinicia a contagem de 9 s para a próxima troca.
@@ -559,11 +719,54 @@ export default function StreamingHome({ children, onAddAnime, onOpenAnime, isAni
     }, 9000);
     return () => window.clearTimeout(timer);
   }, [mode, heroes.length, heroIndex, heroPaused, details, searchOpen]);
+  const savedIds = useMemo(() => new Set(account.entries.map(entry => entry.anime_id)), [account.entries]);
+  const openQuickAdd: QuickAddOpen = (anime, anchor) => {
+    if (!account.user) { setAuthOpen(true); return; }
+    const bounds = anchor.getBoundingClientRect();
+    const menuWidth = 254;
+    const left = Math.max(12, Math.min(window.innerWidth - menuWidth - 12, bounds.right - menuWidth));
+    // Não esconda o menu abaixo da borda inferior da janela.
+    const top = bounds.bottom + 10 + 235 > window.innerHeight ? Math.max(12, bounds.top - 235) : bounds.bottom + 10;
+    setQuickError(''); setQuickAdd({ anime, top, left });
+  };
+  useEffect(() => {
+    if (!quickAdd) return;
+    const onOutside = (event: PointerEvent) => {
+      if (!(event.target as Element | null)?.closest?.('.at-quick-menu, .at-poster-quick-add')) setQuickAdd(null);
+    };
+    const closeScroll = () => setQuickAdd(null);
+    document.addEventListener('pointerdown', onOutside);
+    window.addEventListener('resize', closeScroll);
+    window.addEventListener('scroll', closeScroll, true);
+    return () => {
+      document.removeEventListener('pointerdown', onOutside);
+      window.removeEventListener('resize', closeScroll);
+      window.removeEventListener('scroll', closeScroll, true);
+    };
+  }, [quickAdd]);
+  async function saveQuickAnime(status: LibraryStatus) {
+    if (!quickAdd || quickBusy) return;
+    setQuickBusy(true); setQuickError('');
+    try {
+      const anime = quickAdd.anime;
+      const existing = account.entries.find(e => e.anime_id === anime.id);
+      const watched = status === 'watching' && existing?.status === 'watching' ? existing.watched_episodes : 0;
+      await account.saveAnime({ id: anime.id, title: titleOf(anime), cover: posterOf(anime), banner: anime.bannerImage || null, total: anime.episodes || existing?.total_episodes || null }, status, watched);
+      setQuickNotice(`${titleOf(anime)} salvo em ${status === 'watching' ? 'Assistindo' : status === 'completed' ? 'Concluídos' : 'Assistir mais tarde'}.`);
+      setQuickAdd(null);
+    } catch (cause) { setQuickError(cause instanceof Error ? cause.message : 'Não foi possível salvar.'); }
+    finally { setQuickBusy(false); }
+  }
+  useEffect(() => {
+    if (!quickNotice) return;
+    const timeout = window.setTimeout(() => setQuickNotice(''), 3200);
+    return () => window.clearTimeout(timeout);
+  }, [quickNotice]);
   const openAnime = (anime: StreamingAnime) => {
     const saved = account.entries.find(item => item.anime_id === anime.id);
     setChosenStatus(saved?.status || "planned");
     setChosenEpisodes(saved?.watched_episodes || 0);
-    setSaveError(""); setSaveMessage("");
+    setSaveError(""); setSaveMessage(""); setSynopsisOpen(false); setQuickAdd(null);
     setSearchOpen(false);
     if (onOpenAnime) onOpenAnime(anime);
     else setDetails(anime);
@@ -576,7 +779,7 @@ export default function StreamingHome({ children, onAddAnime, onOpenAnime, isAni
       setSharedUsername(null);
     }
     setMode(target);
-    setSearchOpen(false);
+    setSearchOpen(false); setSynopsisOpen(false); setQuickAdd(null);
     setWatching(readWatching());
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -612,19 +815,35 @@ export default function StreamingHome({ children, onAddAnime, onOpenAnime, isAni
     finally { setSavingAnime(false); }
   }
   return (
-    <div className="at-shell" id="inicio">
-      <aside className="at-sidebar" aria-label="Menu principal">
-        <button type="button" className="at-brand" onClick={() => navigate("home")}>
-          <span className="at-brand-glyph" aria-hidden="true">A</span>
-          <span className="at-brand-copy"><strong>ANIME<span>TRACKER</span></strong><small>SEU UNIVERSO ANIME</small></span>
-        </button>
+    <MotionConfig reducedMotion="user">
+    <motion.div
+      className={`at-shell${sidebarCollapsed ? " at-shell--collapsed" : ""}`}
+      id="inicio"
+      initial={false}
+      animate={{ gridTemplateColumns: sidebarCollapsed ? "76px minmax(0, 1fr)" : "238px minmax(0, 1fr)" }}
+      transition={{ type: "spring", stiffness: 275, damping: 32, mass: 0.9 }}
+    >
+      <aside className="at-sidebar" id="at-sidebar" aria-label="Menu principal">
+        <div className="at-side-header">
+          <motion.button type="button" className="at-sidebar-toggle"
+            onClick={toggleSidebar} aria-label={sidebarCollapsed ? "Expandir menu lateral" : "Recolher menu lateral"}
+            aria-expanded={!sidebarCollapsed} aria-controls="at-navigation"
+            title={sidebarCollapsed ? "Expandir menu" : "Recolher menu"}
+            whileHover={{ backgroundColor: "rgba(255,255,255,.09)" }} whileTap={{ scale: 0.9 }}>
+            <Icon name="menu" size={21} />
+          </motion.button>
+          <button type="button" className="at-brand" onClick={() => navigate("home")} title="Anime Tracker — Início">
+            <span className="at-brand-glyph" aria-hidden="true">A</span>
+            <span className="at-brand-copy"><strong>ANIME<span>TRACKER</span></strong><small>SEU UNIVERSO ANIME</small></span>
+          </button>
+        </div>
         <span className="at-sidebar-label">NAVEGAR</span>
-        <nav className="at-navigation" aria-label="Navegação">
-          <button type="button" className={`at-nav-link${mode === "home" ? " at-nav-active" : ""}`} onClick={() => navigate("home")}><Icon name="home"/><span>Início</span></button>
-          <button type="button" className={`at-nav-link${mode === "discover" ? " at-nav-active" : ""}`} onClick={() => navigate("discover")}><Icon name="compass"/><span>Descobrir</span></button>
-          <button type="button" className={`at-nav-link${mode === "library" || mode === "public" ? " at-nav-active" : ""}`} onClick={() => navigate("library")}><Icon name="bookmark"/><span>Minha lista</span></button>
+        <nav className="at-navigation" id="at-navigation" aria-label="Navegação">
+          <button type="button" title="Início" className={`at-nav-link${mode === "home" ? " at-nav-active" : ""}`} onClick={() => navigate("home")}><Icon name="home"/><span className="at-nav-text">Início</span><span className="at-mini-label" aria-hidden="true">Início</span></button>
+          <button type="button" title="Descobrir" className={`at-nav-link${mode === "discover" ? " at-nav-active" : ""}`} onClick={() => navigate("discover")}><Icon name="compass"/><span className="at-nav-text">Descobrir</span><span className="at-mini-label" aria-hidden="true">Descobrir</span></button>
+          <button type="button" title="Minha lista" className={`at-nav-link${mode === "library" || mode === "public" ? " at-nav-active" : ""}`} onClick={() => navigate("library")}><Icon name="bookmark"/><span className="at-nav-text">Minha lista</span><span className="at-mini-label" aria-hidden="true">Minha lista</span></button>
         </nav>
-        <div className="at-sidebar-footer"><span className="at-live-dot"/> Seu próximo anime está aqui.</div>
+        <div className="at-sidebar-footer"><span className="at-live-dot"/> <span>Seu próximo anime está aqui.</span></div>
       </aside>
 
       <main className="at-main">
@@ -660,40 +879,92 @@ export default function StreamingHome({ children, onAddAnime, onOpenAnime, isAni
         ) : (
           <>
             {mode === "home" && <>
-              <section className={`at-hero-carousel at-slide-${heroMotion}${departingHero ? ' at-hero-is-moving' : ''}`} aria-label="Carrossel de animes em destaque" aria-roledescription="carrossel"
+              <section className="at-hero-carousel" aria-label="Carrossel de animes em destaque" aria-roledescription="carrossel"
                 onMouseEnter={() => setHeroPaused(true)} onMouseLeave={() => setHeroPaused(false)}
                 onFocusCapture={() => setHeroPaused(true)} onBlurCapture={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setHeroPaused(false); }}
                 onKeyDown={(event: ReactKeyboardEvent<HTMLElement>) => {
-                if (event.key === "ArrowLeft") { event.preventDefault(); changeHero(-1); }
-                if (event.key === "ArrowRight") { event.preventDefault(); changeHero(1); }
-              }}>
-                {previousHero ? <button className="at-hero-preview at-hero-preview--previous" type="button" onClick={() => changeHero(-1)} aria-label={`Destaque anterior: ${titleOf(previousHero)}`}><img key={previousHero.id} src={heroImageOf(previousHero)} alt=""/><span className="at-hero-preview-symbol">‹</span></button> : <div className="at-hero-preview at-hero-preview--empty"/>}
-                <div className="at-hero" aria-live="polite" aria-atomic="true">
-                  {hero && <div className="at-hero-image" aria-hidden="true"><img key={hero.id} src={heroImageOf(hero)} alt=""/></div>}
-                  {departingHero && <div className="at-hero-image at-hero-image--leaving" aria-hidden="true"><img src={heroImageOf(departingHero)} alt=""/></div>}
-                  <div className="at-hero-copy" key={hero?.id || "unavailable"}>
-                    <div className="at-featured-label"><span className="at-featured-pulse"/> EM DESTAQUE</div>
-                    <p className="at-hero-kicker">HISTÓRIAS QUE MERECEM SUA ATENÇÃO</p>
-                    <h1>{hero ? titleOf(hero) : "Seu próximo anime começa aqui."}</h1>
-                    <div className="at-hero-meta">
-                      {hero?.seasonYear && <span>{hero.seasonYear}</span>}
-                      {hero && <span>{formatOf(hero)}</span>}
-                      {hero?.genres?.slice(0,2).map((genre) => <span key={genre}>{genre}</span>)}
-                      {hero && ratingOf(hero) && <span className="at-hero-score">★ {ratingOf(hero)}</span>}
-                    </div>
-                    <HeroSynopsis anime={hero}/>
-                    <div className="at-hero-actions">
-                      <button className="at-btn at-btn-primary" type="button" onClick={() => hero ? openAnime(hero) : navigate("discover")}>▶ <span>{hero ? "Ver detalhes" : "Explorar"}</span></button>
-                      <button className="at-btn at-btn-outline" type="button" onClick={() => navigate("library")}><Icon name="bookmark" size={16}/> Minha lista</button>
-                    </div>
-                  </div>
+                  if (event.key === "ArrowLeft") { event.preventDefault(); changeHero(-1); }
+                  if (event.key === "ArrowRight") { event.preventDefault(); changeHero(1); }
+                }}>
+                {previousHero ? (
+                  <motion.button className="at-hero-preview at-hero-preview--previous" type="button" onClick={() => changeHero(-1)}
+                    whileHover={{ scale: 1.025 }} whileTap={{ scale: .98 }} aria-label={`Destaque anterior: ${titleOf(previousHero)}`}>
+                    <AnimatePresence initial={false} mode="popLayout">
+                      <motion.img key={previousHero.id} src={heroImageOf(previousHero)} alt="" draggable={false}
+                        initial={{ opacity: .35, x: -45, scale: 1.08 }} animate={{ opacity: 1, x: 0, scale: 1 }}
+                        exit={{ opacity: 0, x: 35, scale: .97 }} transition={{ duration: .48, ease: [.22, 1, .36, 1] }}/>
+                    </AnimatePresence>
+                    <span className="at-hero-preview-symbol">‹</span>
+                  </motion.button>
+                ) : <div className="at-hero-preview at-hero-preview--empty"/>}
+
+                <motion.div className="at-hero" style={{ touchAction: "pan-y" }}
+                  drag={heroes.length > 1 && !reduceMotion ? "x" : false}
+                  dragDirectionLock dragConstraints={{ left: -140, right: 140 }} dragElastic={.2} dragMomentum={false}
+                  whileDrag={reduceMotion ? undefined : { scale: .986 }}
+                  onDragEnd={(_, info) => {
+                    if (info.offset.x < -65 || info.velocity.x < -550) changeHero(1);
+                    else if (info.offset.x > 65 || info.velocity.x > 550) changeHero(-1);
+                  }}>
+                  <AnimatePresence initial={false} custom={heroDirection} mode="sync">
+                    {hero && <motion.div
+                      key={hero.id} className="at-hero-image"
+                      custom={heroDirection} variants={heroImageVariants}
+                      initial={reduceMotion ? false : "enter"} animate="center" exit="exit"
+                      transition={reduceMotion ? { duration: 0 } : heroImageSpring}>
+                      <img src={heroImageOf(hero)} alt="" draggable={false} />
+                    </motion.div>}
+                  </AnimatePresence>
+
+                  <AnimatePresence initial={false} custom={heroDirection} mode="sync">
+                    <motion.div className="at-hero-copy" key={hero?.id ?? "empty"}
+                      custom={heroDirection} variants={heroCopyVariants}
+                      initial={reduceMotion ? false : "enter"} animate="center" exit="exit"
+                      transition={reduceMotion ? { duration: 0 } : { duration: .45, ease: [.22, 1, .36, 1] }}>
+                      <div className="at-featured-label"><span className="at-featured-pulse"/> EM DESTAQUE</div>
+                      <p className="at-hero-kicker">HISTÓRIAS QUE MERECEM SUA ATENÇÃO</p>
+                      <h1>{hero ? titleOf(hero) : "Seu próximo anime começa aqui."}</h1>
+                      <div className="at-hero-meta">
+                        {hero?.seasonYear && <span>{hero.seasonYear}</span>}
+                        {hero && <span>{formatOf(hero)}</span>}
+                        {hero?.genres?.slice(0,2).map((genre) => <span key={genre}>{genre}</span>)}
+                        {hero && ratingOf(hero) && <span className="at-hero-score">★ {ratingOf(hero)}</span>}
+                      </div>
+                      <HeroSynopsis anime={hero}/>
+                      <div className="at-hero-actions">
+                        <button className="at-btn at-btn-primary" type="button" onClick={() => hero ? openAnime(hero) : navigate("discover")}>▶ <span>{hero ? "Ver detalhes" : "Explorar"}</span></button>
+                        <button className="at-btn at-btn-outline" type="button" onClick={() => navigate("library")}><Icon name="bookmark" size={16}/> Minha lista</button>
+                      </div>
+                    </motion.div>
+                  </AnimatePresence>
+
                   {heroes.length > 1 && <>
                     <button type="button" className="at-hero-nav at-hero-nav--previous" onClick={() => changeHero(-1)} aria-label="Destaque anterior">‹</button>
                     <button type="button" className="at-hero-nav at-hero-nav--next" onClick={() => changeHero(1)} aria-label="Próximo destaque">›</button>
-                    <div className="at-hero-pagination" aria-label="Selecionar destaque">{heroes.map((item, index) => <button type="button" key={item.id} className={index === heroIndex ? "is-selected" : ""} aria-label={`Mostrar destaque ${index + 1}: ${titleOf(item)}`} aria-pressed={index === heroIndex} onClick={() => goToHero(index, index < heroIndex ? 'prev' : 'next')}/>)}</div>
+                    <div className="at-hero-pagination" aria-label="Selecionar destaque">
+                      {heroes.map((item, index) => (
+                        <motion.button type="button" key={item.id} layout
+                          className={index === heroIndex ? "is-selected" : ""}
+                          aria-label={`Mostrar destaque ${index + 1}: ${titleOf(item)}`}
+                          aria-pressed={index === heroIndex}
+                          transition={{ type: "spring", stiffness: 330, damping: 29 }}
+                          onClick={() => goToHero(index, index < heroIndex ? 'prev' : 'next')}/>
+                      ))}
+                    </div>
                   </>}
-                </div>
-                {nextHero ? <button className="at-hero-preview at-hero-preview--next" type="button" onClick={() => changeHero(1)} aria-label={`Próximo destaque: ${titleOf(nextHero)}`}><img key={nextHero.id} src={heroImageOf(nextHero)} alt=""/><span className="at-hero-preview-symbol">›</span></button> : <div className="at-hero-preview at-hero-preview--empty"/>}
+                </motion.div>
+
+                {nextHero ? (
+                  <motion.button className="at-hero-preview at-hero-preview--next" type="button" onClick={() => changeHero(1)}
+                    whileHover={{ scale: 1.025 }} whileTap={{ scale: .98 }} aria-label={`Próximo destaque: ${titleOf(nextHero)}`}>
+                    <AnimatePresence initial={false} mode="popLayout">
+                      <motion.img key={nextHero.id} src={heroImageOf(nextHero)} alt="" draggable={false}
+                        initial={{ opacity: .35, x: 45, scale: 1.08 }} animate={{ opacity: 1, x: 0, scale: 1 }}
+                        exit={{ opacity: 0, x: -35, scale: .97 }} transition={{ duration: .48, ease: [.22, 1, .36, 1] }}/>
+                    </AnimatePresence>
+                    <span className="at-hero-preview-symbol">›</span>
+                  </motion.button>
+                ) : <div className="at-hero-preview at-hero-preview--empty"/>}
               </section>
               <ContinueRail watching={account.user ? cloudWatching : watching} openLibrary={() => navigate("library")}/>
             </>}
@@ -701,15 +972,15 @@ export default function StreamingHome({ children, onAddAnime, onOpenAnime, isAni
             {error && <div className="at-error" role="alert"><span>{error}</span><button type="button" onClick={() => setReload((v) => v + 1)}>Tentar novamente</button></div>}
             {data && <div className="at-discover" id="descobrir">
               {mode === "discover" && <div className="at-discover-heading"><span className="at-eyebrow">EXPLORE NOVAS HISTÓRIAS</span><h1>Descubra animes</h1></div>}
-              <Rail title="Top 10 em alta agora" eyebrow="O QUE ESTÁ BOMBANDO" items={data.trending.media.slice(0,10)} onSelect={openAnime} ranked/>
-              <Rail title={newlyAired.length ? "Novos episódios" : "Em exibição"} eyebrow={newlyAired.length ? "LANÇADOS NOS ÚLTIMOS 7 DIAS" : "ANIMES DA TEMPORADA"} items={newlyAired.length ? newlyAired : data.releasing.media} onSelect={openAnime}/>
-              <Rail title="Ação" items={data.action.media} onSelect={openAnime}/>
-              <Rail title="Terror" items={data.horror.media} onSelect={openAnime}/>
-              <Rail title="Comédia" items={data.comedy.media} onSelect={openAnime}/>
-              <Rail title="Aventura" items={data.adventure.media} onSelect={openAnime}/>
-              <Rail title="Romance" items={data.romance.media} onSelect={openAnime}/>
-              <Rail title="Fantasia" items={data.fantasy.media} onSelect={openAnime}/>
-              <Rail title="Mistério" items={data.mystery.media} onSelect={openAnime}/>
+              <Rail title="Top 10 em alta agora" eyebrow="O QUE ESTÁ BOMBANDO" items={data.trending.media.slice(0,10)} onSelect={openAnime} onQuickAdd={openQuickAdd} savedIds={savedIds} ranked/>
+              <Rail title={newlyAired.length ? "Novos episódios" : "Em exibição"} eyebrow={newlyAired.length ? "LANÇADOS NOS ÚLTIMOS 7 DIAS" : "ANIMES DA TEMPORADA"} items={newlyAired.length ? newlyAired : data.releasing.media} onSelect={openAnime} onQuickAdd={openQuickAdd} savedIds={savedIds}/>
+              <Rail title="Ação" items={data.action.media} onSelect={openAnime} onQuickAdd={openQuickAdd} savedIds={savedIds}/>
+              <Rail title="Terror" items={data.horror.media} onSelect={openAnime} onQuickAdd={openQuickAdd} savedIds={savedIds}/>
+              <Rail title="Comédia" items={data.comedy.media} onSelect={openAnime} onQuickAdd={openQuickAdd} savedIds={savedIds}/>
+              <Rail title="Aventura" items={data.adventure.media} onSelect={openAnime} onQuickAdd={openQuickAdd} savedIds={savedIds}/>
+              <Rail title="Romance" items={data.romance.media} onSelect={openAnime} onQuickAdd={openQuickAdd} savedIds={savedIds}/>
+              <Rail title="Fantasia" items={data.fantasy.media} onSelect={openAnime} onQuickAdd={openQuickAdd} savedIds={savedIds}/>
+              <Rail title="Mistério" items={data.mystery.media} onSelect={openAnime} onQuickAdd={openQuickAdd} savedIds={savedIds}/>
             </div>}
           </>
         )}
@@ -717,13 +988,23 @@ export default function StreamingHome({ children, onAddAnime, onOpenAnime, isAni
       </main>
 
       {authOpen && <AuthDialog onClose={() => setAuthOpen(false)}/>}
-      {selectedDetails && <div className="at-modal-backdrop" onMouseDown={(event: ReactMouseEvent<HTMLDivElement>) => { if (event.target === event.currentTarget) setDetails(null); }}>
-        <section className="at-modal" role="dialog" aria-modal="true" aria-label={`Detalhes de ${titleOf(selectedDetails)}`}>
+      <AnimatePresence>
+      {selectedDetails && <motion.div className="at-modal-backdrop"
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+        transition={{ duration: .2 }} onMouseDown={(event: ReactMouseEvent<HTMLDivElement>) => { if (event.target === event.currentTarget) setDetails(null); }}>
+        <motion.section className="at-modal" role="dialog" aria-modal="true" aria-label={`Detalhes de ${titleOf(selectedDetails)}`}
+          initial={{ opacity: 0, y: 32, scale: .97 }} animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 18, scale: .98 }}
+          transition={{ type: "spring", stiffness: 340, damping: 33 }}>
           <button type="button" className="at-modal-close" aria-label="Fechar" onClick={() => setDetails(null)}>×</button>
           <div className="at-modal-banner" style={heroImageOf(selectedDetails) ? { backgroundImage: `linear-gradient(0deg,#151515,transparent),url("${heroImageOf(selectedDetails)}")` } : undefined}/>
           <div className="at-modal-body"><span className="at-eyebrow">CONHEÇA O ANIME</span><h2>{titleOf(selectedDetails)}</h2>
             <div className="at-modal-meta">{selectedDetails.seasonYear && <span>{selectedDetails.seasonYear}</span>}<span>{formatOf(selectedDetails)}</span>{selectedDetails.episodes && <span>{selectedDetails.episodes} episódios</span>}{ratingOf(selectedDetails) && <span>★ {ratingOf(selectedDetails)}</span>}</div>
-            <AnimeDetailsInfo anime={selectedDetails} loading={detailsLoading} unavailable={detailsError} onTrailer={setTrailerId} />
+            <button className="at-open-synopsis" type="button" onClick={() => setSynopsisOpen(true)}>
+              <span className="at-open-synopsis-icon" aria-hidden="true">☰</span>
+              <span><strong>Sinopse</strong><small>Ler a história completa ao lado da capa</small></span>
+              <span aria-hidden="true">↗</span>
+            </button>
             <div className="at-modal-tags">{selectedDetails.genres?.slice(0,5).map((genre) => <span key={genre}>{genre}</span>)}</div>
             {account.user ? <div className="at-status-panel">
               <span className="at-account-kicker">ADICIONAR À SUA BIBLIOTECA {detailsEntry ? '• JÁ SALVO' : ''}</span>
@@ -743,10 +1024,26 @@ export default function StreamingHome({ children, onAddAnime, onOpenAnime, isAni
               <a className="at-btn at-btn-outline" href={`https://anilist.co/anime/${selectedDetails.id}`} target="_blank" rel="noopener noreferrer">Ver no AniList ↗</a>
               {onAddAnime && <button className="at-btn at-btn-outline" disabled={Boolean(selectedSaved)} type="button" onClick={() => onAddAnime(selectedDetails)}>{selectedSaved ? 'Salvo localmente' : 'Adicionar à biblioteca antiga'}</button>}
             </div>}
+            <AnimeDetailsInfo anime={selectedDetails} loading={detailsLoading} unavailable={detailsError} onTrailer={setTrailerId} />
           </div>
-        </section>
-      </div>}
+        </motion.section>
+      </motion.div>}
+      </AnimatePresence>
       {trailerId && selectedDetails && <YoutubeTrailerModal id={trailerId} title={titleOf(selectedDetails)} onClose={() => setTrailerId(null)}/>}
-    </div>
+      <AnimatePresence>{synopsisOpen && selectedDetails && <AnimeSynopsisOverlay key={selectedDetails.id} anime={selectedDetails} onClose={() => setSynopsisOpen(false)}/>}</AnimatePresence>
+      {quickAdd && createPortal(
+        <div className="at-quick-menu" role="dialog" aria-label={`Adicionar ${titleOf(quickAdd.anime)} à biblioteca`}
+          style={{ top: quickAdd.top, left: quickAdd.left }}>
+          <div className="at-quick-menu-head"><strong>Adicionar à minha lista</strong><button type="button" onClick={() => setQuickAdd(null)} aria-label="Fechar menu">×</button></div>
+          <p title={titleOf(quickAdd.anime)}>{titleOf(quickAdd.anime)}</p>
+          {([['watching', '▶ Assistindo'], ['completed', '✓ Concluídos'], ['planned', '＋ Assistir mais tarde']] as [LibraryStatus, string][]).map(([status, text]) =>
+            <button type="button" key={status} disabled={quickBusy} onClick={() => void saveQuickAnime(status)}>{text}{account.entries.find(e => e.anime_id === quickAdd.anime.id)?.status === status && <span aria-label="Lista atual">●</span>}</button>
+          )}
+          {quickBusy && <small role="status">Salvando...</small>}
+          {quickError && <small className="at-quick-error" role="alert">{quickError}</small>}
+        </div>, document.body)}
+      {quickNotice && createPortal(<div role="status" className="at-quick-notice">✓ {quickNotice}</div>, document.body)}
+    </motion.div>
+    </MotionConfig>
   );
 }

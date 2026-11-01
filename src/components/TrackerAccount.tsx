@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
 import type { User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import './TrackerAccount.css';
@@ -352,7 +353,9 @@ export function ProfilePage({ account, sharedUsername, onSignIn, onOpenLegacy, o
   if (publicBusy || (!isShared && account.user && !profile && !account.error)) return <div className="at-profile-empty">Carregando perfil...</div>;
   if (!profile) return <div className="at-profile-empty"><h2>Perfil indisponível</h2><p>{publicError || account.error || 'Verifique a configuração do banco.'}</p></div>;
 
-  return <section className="at-profile-page">
+  return <motion.section className="at-profile-page"
+    initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: .43, ease: [.22, 1, .36, 1] }}>
     <div className={`at-profile-cover${profile.banner_url ? ' at-profile-cover--custom' : ''}`}
       style={profile.banner_url ? { backgroundImage: `linear-gradient(0deg, rgba(7,7,10,.88),rgba(7,7,10,.08) 80%), url("${profile.banner_url}")`, backgroundPosition: `center, center ${ownEdit && editing ? form.banner_position : (profile.banner_position ?? 50)}%` } : undefined}>
       <span>ANIME TRACKER / SUA HISTÓRIA EM ANIME</span>
@@ -421,10 +424,22 @@ export function ProfilePage({ account, sharedUsername, onSignIn, onOpenLegacy, o
       <div><strong>{counts.planned}</strong><span>Assistir mais tarde</span></div>
     </div>
     <div className="at-profile-tabs" role="tablist" aria-label="Filtrar biblioteca">
-      {(['completed', 'watching', 'planned'] as LibraryStatus[]).map(status => <button key={status} type="button" role="tab" aria-selected={filter === status} className={filter === status ? 'active' : ''} onClick={() => setFilter(status)}>{STATUS_NAMES[status]} <span>{counts[status]}</span></button>)}
+      {(['completed', 'watching', 'planned'] as LibraryStatus[]).map(status =>
+        <button key={status} type="button" role="tab" aria-selected={filter === status}
+          className={filter === status ? 'active' : ''} onClick={() => setFilter(status)}>
+          {STATUS_NAMES[status]} <span>{counts[status]}</span>
+          {filter === status && <motion.i className="at-profile-tab-line" aria-hidden="true"
+            layoutId="at-profile-selected-tab"
+            transition={{ type: 'spring', stiffness: 350, damping: 32 }}/>}</button>)}
     </div>
     {rowError && <div className="at-account-error" role="alert">{rowError}</div>}
-    {shown.length ? <div className="at-profile-grid">{shown.map(entry => <article className="at-profile-card" key={entry.anime_id}>
+    <AnimatePresence initial={false} mode="wait">
+    {shown.length ? <motion.div key={`grid-${filter}`} className="at-profile-grid"
+      initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -12 }} transition={{ duration: .25, ease: [.22, 1, .36, 1] }}>
+      {shown.map(entry => <motion.article layout className="at-profile-card" key={entry.anime_id}
+        initial={{ opacity: 0, y: 13 }} animate={{ opacity: 1, y: 0 }}
+        whileHover={{ y: -5 }} transition={{ type: 'spring', stiffness: 310, damping: 28 }}>
       <button type="button" className="at-profile-poster at-profile-poster-button" title={`Ver detalhes de ${entry.anime_title}`} onClick={() => onSelectAnime?.(entry)}>{entry.cover_url ? <img src={entry.cover_url} alt="" loading="lazy"/> : <span>ANIME</span>}</button>
       <div className="at-profile-card-body"><h3><button type="button" className="at-profile-title-link" onClick={() => onSelectAnime?.(entry)}>{entry.anime_title}</button></h3><span className="at-profile-card-status">{STATUS_NAMES[entry.status]}</span>
         {entry.status !== 'planned' && <p>{entry.status === 'completed' && !entry.total_episodes && !entry.watched_episodes ? 'Concluído' : `${entry.watched_episodes}${entry.total_episodes ? ` / ${entry.total_episodes}` : ''} episódios`}</p>}
@@ -434,7 +449,13 @@ export function ProfilePage({ account, sharedUsername, onSignIn, onOpenLegacy, o
           <button disabled={rowBusy === entry.anime_id} type="button" onClick={() => void removeEntry(entry.anime_id)}>Remover</button>
         </div>}
       </div>
-    </article>)}</div> : <div className="at-profile-list-empty">Nenhum anime em <b>{STATUS_NAMES[filter].toLowerCase()}</b> ainda. Encontre um no catálogo e adicione à sua lista.</div>}
+    </motion.article>)}</motion.div> :
+      <motion.div key={`empty-${filter}`} className="at-profile-list-empty"
+        initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -10 }}>
+        Nenhum anime em <b>{STATUS_NAMES[filter].toLowerCase()}</b> ainda. Encontre um no catálogo e adicione à sua lista.
+      </motion.div>}
+    </AnimatePresence>
     {ownEdit && <button type="button" className="at-account-ghost at-legacy-link" onClick={onOpenLegacy}>Abrir biblioteca antiga deste navegador (ainda não sincronizada)</button>}
-  </section>;
+  </motion.section>;
 }
