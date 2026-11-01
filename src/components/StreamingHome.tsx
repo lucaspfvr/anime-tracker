@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import "./StreamingHome.css";
 
 /**
- * Anime Tracker — nova vitrine (etapa 1)
+ * Anime Tracker — vitrine ampliada (etapa 2)
  *
  * Este componente não altera nem lê o localStorage do aplicativo.
  * Envolva o <App /> atual com <StreamingHome> no src/main.tsx.
@@ -275,6 +275,16 @@ export default function StreamingHome({
   }, [data]);
 
   const hero = heroItems[selectedHero] || null;
+  const previousHero = heroItems.length > 1
+    ? heroItems[(selectedHero - 1 + heroItems.length) % heroItems.length]
+    : null;
+  const nextHero = heroItems.length > 1
+    ? heroItems[(selectedHero + 1) % heroItems.length]
+    : null;
+
+  function changeHero(direction: -1 | 1) {
+    setSelectedHero((current) => (current + direction + heroItems.length) % heroItems.length);
+  }
 
   function selectAnime(anime: StreamingAnime) {
     if (onOpenAnime) {
@@ -329,50 +339,94 @@ export default function StreamingHome({
           </button>
         </header>
 
-        <section className="at-hero" aria-label="Animes em destaque">
-          {hero && (
-            <div className="at-hero-image" aria-hidden="true">
-              <img src={hero.bannerImage || posterOf(hero)} alt="" />
+        <section
+          className="at-hero-carousel"
+          aria-label="Carrossel de animes em destaque"
+          aria-roledescription="carrossel"
+          onKeyDown={(event) => {
+            if (heroItems.length < 2) return;
+            if (event.key === "ArrowLeft") {
+              event.preventDefault();
+              changeHero(-1);
+            } else if (event.key === "ArrowRight") {
+              event.preventDefault();
+              changeHero(1);
+            }
+          }}
+        >
+          {previousHero ? (
+            <button
+              type="button"
+              className="at-hero-preview at-hero-preview--previous"
+              onClick={() => changeHero(-1)}
+              aria-label={`Mostrar destaque anterior: ${titleOf(previousHero)}`}
+            >
+              <img src={previousHero.bannerImage || posterOf(previousHero)} alt="" loading="lazy" />
+              <span className="at-hero-preview-symbol" aria-hidden="true">‹</span>
+            </button>
+          ) : <div className="at-hero-preview at-hero-preview--empty" aria-hidden="true" />}
+
+          <div className="at-hero" aria-live="polite" aria-atomic="true">
+            {hero && (
+              <div className="at-hero-image" aria-hidden="true">
+                <img key={hero.id} src={hero.bannerImage || posterOf(hero)} alt="" />
+              </div>
+            )}
+            <div className="at-hero-copy">
+              <div className="at-featured-label"><span className="at-featured-pulse" /> DESTAQUE DA SEMANA</div>
+              <p className="at-hero-kicker">A PRÓXIMA HISTÓRIA QUE VAI TE PRENDER</p>
+              <h1>{hero ? titleOf(hero) : loading ? "Um universo de histórias espera por você." : "Descubra sua próxima obsessão."}</h1>
+              <div className="at-hero-meta">
+                {hero?.seasonYear && <span>{hero.seasonYear}</span>}
+                {hero?.format && <span>{formatOf(hero)}</span>}
+                {hero?.genres?.slice(0, 2).map((genre) => <span key={genre}>{genre}</span>)}
+                {hero && ratingOf(hero) && <span className="at-hero-score">★ {ratingOf(hero)}</span>}
+              </div>
+              <p className="at-hero-description">
+                {hero ? (summarize(hero.description, 205) || "Explore os detalhes e acompanhe seus animes favoritos.") :
+                  "Descubra novos títulos, organize sua coleção e acompanhe cada episódio em um só lugar."}
+              </p>
+              <div className="at-hero-actions">
+                <button className="at-btn at-btn-primary" type="button" onClick={() => hero ? selectAnime(hero) : goTo("minha-lista")}>
+                  <span aria-hidden="true">▶</span> {hero ? "Ver detalhes" : "Minha lista"}
+                </button>
+                <button className="at-btn at-btn-outline" type="button" onClick={() => goTo("minha-lista")}>
+                  <NavIcon name="bookmark" /> Minha lista
+                </button>
+              </div>
             </div>
-          )}
-          <div className="at-hero-copy">
-            <div className="at-featured-label"><span className="at-featured-pulse" /> DESTAQUE DA SEMANA</div>
-            <p className="at-hero-kicker">A PRÓXIMA HISTÓRIA QUE VAI TE PRENDER</p>
-            <h1>{hero ? titleOf(hero) : loading ? "Um universo de histórias espera por você." : "Descubra sua próxima obsessão."}</h1>
-            <div className="at-hero-meta">
-              {hero?.seasonYear && <span>{hero.seasonYear}</span>}
-              {hero?.format && <span>{formatOf(hero)}</span>}
-              {hero?.genres?.slice(0, 2).map((genre) => <span key={genre}>{genre}</span>)}
-              {hero && ratingOf(hero) && <span className="at-hero-score">★ {ratingOf(hero)}</span>}
-            </div>
-            <p className="at-hero-description">
-              {hero ? (summarize(hero.description, 205) || "Explore os detalhes e acompanhe seus animes favoritos.") :
-                "Descubra novos títulos, organize sua coleção e acompanhe cada episódio em um só lugar."}
-            </p>
-            <div className="at-hero-actions">
-              <button className="at-btn at-btn-primary" type="button" onClick={() => hero ? selectAnime(hero) : goTo("minha-lista")}>
-                <span aria-hidden="true">▶</span> {hero ? "Ver detalhes" : "Minha lista"}
-              </button>
-              <button className="at-btn at-btn-outline" type="button" onClick={() => goTo("minha-lista")}>
-                <NavIcon name="bookmark" /> Minha lista
-              </button>
-            </div>
+            {heroItems.length > 1 && (
+              <>
+                <button type="button" className="at-hero-nav at-hero-nav--previous" onClick={() => changeHero(-1)} aria-label="Destaque anterior">‹</button>
+                <button type="button" className="at-hero-nav at-hero-nav--next" onClick={() => changeHero(1)} aria-label="Próximo destaque">›</button>
+                <div className="at-hero-pagination" aria-label="Escolher destaque">
+                  {heroItems.map((anime, index) => (
+                    <button
+                      type="button"
+                      key={anime.id}
+                      className={index === selectedHero ? "is-selected" : ""}
+                      aria-label={`Destaque ${index + 1}: ${titleOf(anime)}`}
+                      aria-pressed={index === selectedHero}
+                      onClick={() => setSelectedHero(index)}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
+            <span className="at-hero-side-note" aria-hidden="true">SELEÇÃO ANIME TRACKER</span>
           </div>
-          {heroItems.length > 1 && (
-            <div className="at-hero-pagination" aria-label="Escolher destaque">
-              {heroItems.map((anime, index) => (
-                <button
-                  type="button"
-                  key={anime.id}
-                  className={index === selectedHero ? "is-selected" : ""}
-                  aria-label={`Destaque ${index + 1}: ${titleOf(anime)}`}
-                  aria-pressed={index === selectedHero}
-                  onClick={() => setSelectedHero(index)}
-                />
-              ))}
-            </div>
-          )}
-          <span className="at-hero-side-note" aria-hidden="true">SELEÇÃO ANIME TRACKER</span>
+
+          {nextHero ? (
+            <button
+              type="button"
+              className="at-hero-preview at-hero-preview--next"
+              onClick={() => changeHero(1)}
+              aria-label={`Mostrar próximo destaque: ${titleOf(nextHero)}`}
+            >
+              <img src={nextHero.bannerImage || posterOf(nextHero)} alt="" loading="lazy" />
+              <span className="at-hero-preview-symbol" aria-hidden="true">›</span>
+            </button>
+          ) : <div className="at-hero-preview at-hero-preview--empty" aria-hidden="true" />}
         </section>
 
         {loading && (
