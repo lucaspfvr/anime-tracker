@@ -1,32 +1,46 @@
-# React + TypeScript + Vite
+# Anime Tracker
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Aplicação em React e TypeScript para descobrir animes, acompanhar episódios e compartilhar listas pessoais. Catálogo AniList; autenticação, perfis e biblioteca no Supabase.
 
-Currently, two official plugins are available:
+## Funcionalidades
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- Destaques, pesquisa, trailers, links de streaming e tradução de sinopses.
+- Listas Assistindo, Concluídos e Assistir mais tarde com progresso por episódios.
+- Cadastro por e-mail/senha, foto e banner de perfil.
+- Perfis públicos opcionais em `/@usuario`; visitantes podem consultar as três listas.
+- Biblioteca da primeira versão preservada no navegador, com avaliações de 0,5 a 5 estrelas. Essas avaliações ainda não são sincronizadas com o Supabase.
+- Menu retrátil e animações que respeitam a preferência de movimento reduzido.
 
-## React Compiler
+## Rodar no Windows
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Na pasta do projeto, com Node 22.18+ (incluindo Node 24):
 
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```powershell
+npm.cmd ci
+npm.cmd run dev
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Mantenha seu `.env.local`. Para instalação nova, copie `.env.example` para `.env.local` e preencha URL e chave pública do seu projeto Supabase. Sem esses valores, o catálogo funciona, mas o cadastro fica indisponível.
+
+```powershell
+npm.cmd run build
+npm.cmd run lint
+npm.cmd test
+```
+
+## Organização
+
+- `src/components/`: interface do catálogo, conta, perfil e trailers.
+- `src/hooks/`: sincronização da conta e tradução com cache/cancelamento.
+- `src/lib/`: cliente Supabase, URLs de perfil e funções compartilhadas.
+- `src/App.tsx` e `src/model.ts`: biblioteca local antiga, carregada sob demanda.
+- `supabase/`: SQL original recuperado das etapas 5 e 6; tabelas, gatilhos, RLS e buckets.
+- `tests/`: links de perfis e políticas de acesso executadas em Postgres local (PGlite).
+
+## Publicação
+
+Siga [PUBLICAR.md](PUBLICAR.md) para hospedar na Vercel usando um endereço `*.vercel.app`, com o mesmo banco existente. Não é necessário comprar domínio.
+
+## Limites atuais
+
+A biblioteca antiga usa IDs MyAnimeList; a atual usa IDs AniList. Não misturamos esses registros nem migramos automaticamente seus dados locais. APIs de catálogo/tradução podem limitar requisições. Os testes locais de RLS não substituem verificar as políticas e o cadastro no projeto Supabase real.

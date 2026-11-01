@@ -1,139 +1,766 @@
 /* Etapa 5 — cadastro, avatar e perfil, no mesmo tema preto/laranja. */
-.at-topbar-actions { position: relative; }
-.at-avatar-btn { width: 39px; height: 39px; border-radius: 50%; border: 2px solid rgba(255,255,255,.62); background: linear-gradient(135deg,#ff6b2b,#6d3022); color: #fff; display: grid; place-items: center; font-weight: 900; font-size: 13px; overflow: hidden; }
-.at-avatar-btn:hover { border-color: #ff8b51; }
-.at-user-menu-wrap { position: relative; flex: none; }
-.at-user-menu { position: absolute; z-index: 35; top: calc(100% + 13px); right: 0; width: 242px; padding: 9px; border: 1px solid #34343a; border-radius: 12px; background: #1a1a1e; box-shadow: 0 16px 55px rgba(0,0,0,.65); }
-.at-user-menu-title { display: flex; flex-direction: column; gap: 2px; padding: 12px 11px; border-bottom: 1px solid #38383f; overflow-wrap: anywhere; }
-.at-user-menu-title small { color: #9999a6; }
-.at-user-menu > button { width: 100%; text-align: left; border: none; background: transparent; padding: 12px 11px; border-radius: 7px; color: #ececf0; }
-.at-user-menu > button:hover { background: #313136; }
-.at-account-backdrop { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; padding: 18px; background: rgba(0,0,0,.85); backdrop-filter: blur(12px); }
-.at-account-dialog { position: relative; background: #18181c; border: 1px solid #38343a; border-radius: 20px; padding: clamp(24px, 4vw, 42px); width: min(465px, 100%); max-height: min(95vh, 780px); overflow-y: auto; box-shadow: 0 25px 100px #000a; }
-.at-account-close { position: absolute; right: 18px; top: 15px; border: none; background: transparent; color: #fff; font-size: 30px; }
-.at-account-kicker { color: #ff874b; font-size: 10px; font-weight: 900; letter-spacing: .2em; }
-.at-account-dialog h2 { font-size: clamp(25px, 3vw, 35px); font-weight: 900; line-height: 1.13; letter-spacing: -.04em; margin: 12px 0 12px; }
-.at-account-dialog > p { margin: 0 0 22px; color: #b4b1ba; line-height: 1.6; }
-.at-account-tabs { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid #454049; margin-bottom: 21px; }
-.at-account-tabs button { border: 0; border-bottom: 3px solid transparent; padding: 12px; color: #aba8b0; background: transparent; font-weight: 750; }
-.at-account-tabs button.active { color: #fff; border-bottom-color: #ff692e; }
-.at-account-form, .at-profile-edit { display: grid; gap: 14px; }
-.at-account-form label, .at-profile-edit label { display: grid; gap: 7px; color: #d8d6db; font-size: 12px; font-weight: 750; }
-.at-account-form input, .at-profile-edit input:not([type=checkbox]), .at-profile-edit textarea { width: 100%; min-height: 44px; padding: 10px 12px; border-radius: 8px; border: 1px solid #45434b; outline: none; background: #101013; color: #fff; font: inherit; }
-.at-account-form input:focus, .at-profile-edit input:focus, .at-profile-edit textarea:focus { border-color: #ff823a; }
-.at-account-primary { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 11px 18px; border: 0; border-radius: 8px; background: #ff622b; color: #fff; font-weight: 850; }
-.at-account-primary:hover { background: #ff7d43; }
-.at-account-ghost { min-height: 42px; padding: 10px 16px; border: 1px solid #4b454c; border-radius: 8px; color: #f4f1f4; background: #1d1c20; }
-.at-account-ghost:hover { background: #2b292e; }
-.at-account-info { padding: 11px 14px; margin: 10px 0; border-radius: 8px; background: #23312b; color: #bff5ce; overflow-wrap: anywhere; }
-.at-account-error { padding: 11px 14px; margin: 10px 0; border-radius: 8px; background: #3b1f1c; color: #ffc1ad; overflow-wrap: anywhere; }
-.at-profile-page { width: 100%; padding-bottom: 36px; }
-.at-profile-cover { height: clamp(170px,20vw,290px); position: relative; display: flex; align-items: flex-end; padding: 25px clamp(20px,4vw,55px); border-radius: 14px; overflow: hidden; background: linear-gradient(12deg,#101012 5%,transparent 77%), radial-gradient(ellipse at 78% 25%,#ff661d 0%,#7f2917 24%,#222026 66%,#0d0d10 100%); }
-.at-profile-cover:after { content: 'ANIME'; position: absolute; font-size: clamp(110px,17vw,260px); font-weight: 1000; opacity: .08; right: 0; top: -20%; pointer-events: none; }
-.at-profile-cover > span { color: #ffb389; font-size: 10px; font-weight: 900; letter-spacing: .19em; }
-.at-profile-header { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 22px; margin-top: -40px; padding: 0 clamp(12px,2vw,28px); }
-.at-profile-avatar { position: relative; display: grid; place-items: center; width: 115px; height: 115px; flex: none; border: 5px solid #0c0c0e; border-radius: 50%; background: linear-gradient(135deg,#ff8646,#783223); font-size: 33px; font-weight: 900; }
-.at-profile-person { flex: 1 1 210px; padding-top: 44px; }
-.at-profile-person h1 { font-size: clamp(29px,3.4vw,49px); letter-spacing: -.045em; line-height: 1.05; margin: 7px 0; }
-.at-profile-handle { color: #a8a4ae; margin: 5px 0; }
-.at-profile-bio { max-width: 680px; margin: 9px 0 0; color: #d1ced5; }
-.at-profile-actions { margin-left: auto; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; padding-top: 35px; }
-.at-private-note { color: #aaa8b1; font-size: 12px; max-width: 245px; }
-.at-profile-stats { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 14px; margin: 32px 0 18px; }
-.at-profile-stats > div { background: #18181c; border: 1px solid #303036; border-radius: 12px; padding: 16px 20px; display: flex; flex-direction: column; gap: 2px; }
-.at-profile-stats strong { font-size: 30px; font-weight: 900; line-height: 1.2; }
-.at-profile-stats span { color: #aaa7b0; font-size: 12px; }
-.at-profile-tabs { display: flex; overflow-x: auto; gap: 25px; border-bottom: 1px solid #353139; margin: 24px 0; }
-.at-profile-tabs button { flex: none; padding: 14px 3px; border: 0; border-bottom: 3px solid transparent; background: transparent; color: #a8a6b0; font-weight: 750; }
-.at-profile-tabs button.active { border-bottom-color: #ff6a30; color: #fff; }
-.at-profile-tabs button span { background: #2c292e; border-radius: 100px; padding: 3px 8px; margin-left: 6px; color: #ffae88; font-size: 11px; }
-.at-profile-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(180px,1fr)); gap: 18px; }
-.at-profile-card { min-width: 0; overflow: hidden; border: 1px solid #35323a; border-radius: 10px; background: #19191d; }
-.at-profile-poster { width: 100%; aspect-ratio: 2/3; overflow: hidden; background: #2a1714; display: grid; place-items: center; }
-.at-profile-poster img { width: 100%; height: 100%; object-fit: cover; }
-.at-profile-card-body { padding: 12px 12px 14px; }
-.at-profile-card h3 { min-height: 35px; font-size: 13px; font-weight: 850; line-height: 1.35; margin: 0 0 7px; }
-.at-profile-card-status { color: #ff9e69; font-size: 11px; font-weight: 800; }
-.at-profile-card p { color: #aaa7b0; margin: 7px 0; font-size: 12px; }
-.at-profile-progress { height: 5px; border-radius: 20px; overflow: hidden; background: #49424a; }
-.at-profile-progress span { height: 100%; display: block; background: #ff652d; }
-.at-profile-card-controls { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
-.at-profile-card-controls button { border: 1px solid #49434a; border-radius: 7px; padding: 5px 9px; color: #fff; background: #2b292d; font-size: 11px; }
-.at-profile-card-controls button:hover { border-color: #ff7741; }
-.at-profile-list-empty { padding: 50px 24px; border: 1px dashed #44414a; border-radius: 12px; text-align: center; color: #bbb6bf; }
-.at-profile-empty { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; min-height: 360px; justify-content: center; padding: clamp(25px,6vw,90px); border: 1px solid #383139; border-radius: 14px; background: linear-gradient(115deg,#281915,#121215); }
-.at-profile-empty h1 { font-size: clamp(27px,4vw,50px); margin: 0; }
-.at-profile-empty p { max-width: 600px; color: #c1bac2; }
-.at-profile-edit { padding: 24px; margin: 27px 0 0; border: 1px solid #3b353a; border-radius: 14px; background: #18181c; }
-.at-profile-edit h2 { margin: 0; }
-.at-profile-fields { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 14px; }
-.at-profile-edit .at-profile-public-toggle { display: flex; align-items: center; gap: 13px; padding: 12px 0; }
-.at-profile-public-toggle input { width: 19px; height: 19px; accent-color: #ff632c; }
-.at-profile-public-toggle span { display: flex; flex-direction: column; gap: 3px; }
-.at-profile-public-toggle small { color: #a9a3ad; font-weight: 400; }
-.at-profile-form-actions { display: flex; flex-wrap: wrap; gap: 9px; }
-.at-legacy-link { margin-top: 35px; color: #a9a5ab; font-size: 12px; }
-.at-status-action-grid { display: grid; gap: 9px; margin: 22px 0 9px; }
-.at-status-action-grid button { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px; border: 1px solid #424047; border-radius: 9px; background: #232126; padding: 12px 16px; color: #f3f2f3; text-align: left; font-size: 13px; font-weight: 750; }
-.at-status-action-grid button:hover { border-color: #ff682e; background: #33251f; }
-.at-status-action-grid button.active { border-color: #ff712d; background: #40281f; }
-.at-status-panel { margin-top: 17px; }
-.at-status-panel label { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; font-size: 13px; }
-.at-status-panel input { width: 92px; padding: 8px 10px; border: 1px solid #544a50; border-radius: 7px; color: #fff; background: #141316; }
-.at-status-panel-actions { display: flex; gap: 9px; align-items: center; margin-top: 14px; flex-wrap: wrap; }
-@media(max-width:900px) { .at-profile-header { gap: 12px; } .at-profile-stats { grid-template-columns: repeat(2,minmax(0,1fr)); } }
-@media(max-width:560px) { .at-profile-cover { height: 175px; } .at-profile-avatar { width: 88px; height: 88px; font-size: 27px; } .at-profile-person { padding-top: 8px; } .at-profile-actions { padding-top: 0; margin-left: 0; width: 100%; } .at-profile-fields { grid-template-columns: 1fr; } .at-profile-stats > div { padding: 13px; } .at-profile-stats strong { font-size: 24px; } .at-profile-grid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 9px; } .at-profile-card-controls button { font-size: 10px; } }
+.at-topbar-actions {
+  position: relative;
+}
+.at-avatar-btn {
+  width: 39px;
+  height: 39px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.62);
+  background: linear-gradient(135deg, #ff6b2b, #6d3022);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  font-size: 13px;
+  overflow: hidden;
+}
+.at-avatar-btn:hover {
+  border-color: #ff8b51;
+}
+.at-user-menu-wrap {
+  position: relative;
+  flex: none;
+}
+.at-user-menu {
+  position: absolute;
+  z-index: 35;
+  top: calc(100% + 13px);
+  right: 0;
+  width: 242px;
+  padding: 9px;
+  border: 1px solid #34343a;
+  border-radius: 12px;
+  background: #1a1a1e;
+  box-shadow: 0 16px 55px rgba(0, 0, 0, 0.65);
+}
+.at-user-menu-title {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 11px;
+  border-bottom: 1px solid #38383f;
+  overflow-wrap: anywhere;
+}
+.at-user-menu-title small {
+  color: #9999a6;
+}
+.at-user-menu > button {
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: transparent;
+  padding: 12px 11px;
+  border-radius: 7px;
+  color: #ececf0;
+}
+.at-user-menu > button:hover {
+  background: #313136;
+}
+.at-account-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(12px);
+}
+.at-account-dialog {
+  position: relative;
+  background: #18181c;
+  border: 1px solid #38343a;
+  border-radius: 20px;
+  padding: clamp(24px, 4vw, 42px);
+  width: min(465px, 100%);
+  max-height: min(95vh, 780px);
+  overflow-y: auto;
+  box-shadow: 0 25px 100px #000a;
+}
+.at-account-close {
+  position: absolute;
+  right: 18px;
+  top: 15px;
+  border: none;
+  background: transparent;
+  color: #fff;
+  font-size: 30px;
+}
+.at-account-kicker {
+  color: #ff874b;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.2em;
+}
+.at-account-dialog h2 {
+  font-size: clamp(25px, 3vw, 35px);
+  font-weight: 900;
+  line-height: 1.13;
+  letter-spacing: -0.04em;
+  margin: 12px 0 12px;
+}
+.at-account-dialog > p {
+  margin: 0 0 22px;
+  color: #b4b1ba;
+  line-height: 1.6;
+}
+.at-account-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-bottom: 1px solid #454049;
+  margin-bottom: 21px;
+}
+.at-account-tabs button {
+  border: 0;
+  border-bottom: 3px solid transparent;
+  padding: 12px;
+  color: #aba8b0;
+  background: transparent;
+  font-weight: 750;
+}
+.at-account-tabs button.active {
+  color: #fff;
+  border-bottom-color: #ff692e;
+}
+.at-account-form,
+.at-profile-edit {
+  display: grid;
+  gap: 14px;
+}
+.at-account-form label,
+.at-profile-edit label {
+  display: grid;
+  gap: 7px;
+  color: #d8d6db;
+  font-size: 12px;
+  font-weight: 750;
+}
+.at-account-form input,
+.at-profile-edit input:not([type="checkbox"]),
+.at-profile-edit textarea {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #45434b;
+  outline: none;
+  background: #101013;
+  color: #fff;
+  font: inherit;
+}
+.at-account-form input:focus,
+.at-profile-edit input:focus,
+.at-profile-edit textarea:focus {
+  border-color: #ff823a;
+}
+.at-account-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 11px 18px;
+  border: 0;
+  border-radius: 8px;
+  background: #ff622b;
+  color: #fff;
+  font-weight: 850;
+}
+.at-account-primary:hover {
+  background: #ff7d43;
+}
+.at-account-ghost {
+  min-height: 42px;
+  padding: 10px 16px;
+  border: 1px solid #4b454c;
+  border-radius: 8px;
+  color: #f4f1f4;
+  background: #1d1c20;
+}
+.at-account-ghost:hover {
+  background: #2b292e;
+}
+.at-account-info {
+  padding: 11px 14px;
+  margin: 10px 0;
+  border-radius: 8px;
+  background: #23312b;
+  color: #bff5ce;
+  overflow-wrap: anywhere;
+}
+.at-account-error {
+  padding: 11px 14px;
+  margin: 10px 0;
+  border-radius: 8px;
+  background: #3b1f1c;
+  color: #ffc1ad;
+  overflow-wrap: anywhere;
+}
+.at-profile-page {
+  width: 100%;
+  padding-bottom: 36px;
+}
+.at-profile-cover {
+  height: clamp(170px, 20vw, 290px);
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  padding: 25px clamp(20px, 4vw, 55px);
+  border-radius: 14px;
+  overflow: hidden;
+  background:
+    linear-gradient(12deg, #101012 5%, transparent 77%),
+    radial-gradient(
+      ellipse at 78% 25%,
+      #ff661d 0%,
+      #7f2917 24%,
+      #222026 66%,
+      #0d0d10 100%
+    );
+}
+.at-profile-cover:after {
+  content: "ANIME";
+  position: absolute;
+  font-size: clamp(110px, 17vw, 260px);
+  font-weight: 1000;
+  opacity: 0.08;
+  right: 0;
+  top: -20%;
+  pointer-events: none;
+}
+.at-profile-cover > span {
+  color: #ffb389;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.19em;
+}
+.at-profile-header {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 22px;
+  margin-top: -40px;
+  padding: 0 clamp(12px, 2vw, 28px);
+}
+.at-profile-avatar {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 115px;
+  height: 115px;
+  flex: none;
+  border: 5px solid #0c0c0e;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ff8646, #783223);
+  font-size: 33px;
+  font-weight: 900;
+}
+.at-profile-person {
+  flex: 1 1 210px;
+  padding-top: 44px;
+}
+.at-profile-person h1 {
+  font-size: clamp(29px, 3.4vw, 49px);
+  letter-spacing: -0.045em;
+  line-height: 1.05;
+  margin: 7px 0;
+}
+.at-profile-handle {
+  color: #a8a4ae;
+  margin: 5px 0;
+}
+.at-profile-bio {
+  max-width: 680px;
+  margin: 9px 0 0;
+  color: #d1ced5;
+}
+.at-profile-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  padding-top: 35px;
+}
+.at-private-note {
+  color: #aaa8b1;
+  font-size: 12px;
+  max-width: 245px;
+}
+.at-profile-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin: 32px 0 18px;
+}
+.at-profile-stats > div {
+  background: #18181c;
+  border: 1px solid #303036;
+  border-radius: 12px;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.at-profile-stats strong {
+  font-size: 30px;
+  font-weight: 900;
+  line-height: 1.2;
+}
+.at-profile-stats span {
+  color: #aaa7b0;
+  font-size: 12px;
+}
+.at-profile-tabs {
+  display: flex;
+  overflow-x: auto;
+  gap: 25px;
+  border-bottom: 1px solid #353139;
+  margin: 24px 0;
+}
+.at-profile-tabs button {
+  flex: none;
+  padding: 14px 3px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  color: #a8a6b0;
+  font-weight: 750;
+}
+.at-profile-tabs button.active {
+  border-bottom-color: #ff6a30;
+  color: #fff;
+}
+.at-profile-tabs button span {
+  background: #2c292e;
+  border-radius: 100px;
+  padding: 3px 8px;
+  margin-left: 6px;
+  color: #ffae88;
+  font-size: 11px;
+}
+.at-profile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 18px;
+}
+.at-profile-card {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #35323a;
+  border-radius: 10px;
+  background: #19191d;
+}
+.at-profile-poster {
+  width: 100%;
+  aspect-ratio: 2/3;
+  overflow: hidden;
+  background: #2a1714;
+  display: grid;
+  place-items: center;
+}
+.at-profile-poster img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.at-profile-card-body {
+  padding: 12px 12px 14px;
+}
+.at-profile-card h3 {
+  min-height: 35px;
+  font-size: 13px;
+  font-weight: 850;
+  line-height: 1.35;
+  margin: 0 0 7px;
+}
+.at-profile-card-status {
+  color: #ff9e69;
+  font-size: 11px;
+  font-weight: 800;
+}
+.at-profile-card p {
+  color: #aaa7b0;
+  margin: 7px 0;
+  font-size: 12px;
+}
+.at-profile-progress {
+  height: 5px;
+  border-radius: 20px;
+  overflow: hidden;
+  background: #49424a;
+}
+.at-profile-progress span {
+  height: 100%;
+  display: block;
+  background: #ff652d;
+}
+.at-profile-card-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 10px;
+}
+.at-profile-card-controls button {
+  border: 1px solid #49434a;
+  border-radius: 7px;
+  padding: 5px 9px;
+  color: #fff;
+  background: #2b292d;
+  font-size: 11px;
+}
+.at-profile-card-controls button:hover {
+  border-color: #ff7741;
+}
+.at-profile-list-empty {
+  padding: 50px 24px;
+  border: 1px dashed #44414a;
+  border-radius: 12px;
+  text-align: center;
+  color: #bbb6bf;
+}
+.at-profile-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  min-height: 360px;
+  justify-content: center;
+  padding: clamp(25px, 6vw, 90px);
+  border: 1px solid #383139;
+  border-radius: 14px;
+  background: linear-gradient(115deg, #281915, #121215);
+}
+.at-profile-empty h1 {
+  font-size: clamp(27px, 4vw, 50px);
+  margin: 0;
+}
+.at-profile-empty p {
+  max-width: 600px;
+  color: #c1bac2;
+}
+.at-profile-edit {
+  padding: 24px;
+  margin: 27px 0 0;
+  border: 1px solid #3b353a;
+  border-radius: 14px;
+  background: #18181c;
+}
+.at-profile-edit h2 {
+  margin: 0;
+}
+.at-profile-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.at-profile-edit .at-profile-public-toggle {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 12px 0;
+}
+.at-profile-public-toggle input {
+  width: 19px;
+  height: 19px;
+  accent-color: #ff632c;
+}
+.at-profile-public-toggle span {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.at-profile-public-toggle small {
+  color: #a9a3ad;
+  font-weight: 400;
+}
+.at-profile-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+.at-legacy-link {
+  margin-top: 35px;
+  color: #a9a5ab;
+  font-size: 12px;
+}
+.at-status-action-grid {
+  display: grid;
+  gap: 9px;
+  margin: 22px 0 9px;
+}
+.at-status-action-grid button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid #424047;
+  border-radius: 9px;
+  background: #232126;
+  padding: 12px 16px;
+  color: #f3f2f3;
+  text-align: left;
+  font-size: 13px;
+  font-weight: 750;
+}
+.at-status-action-grid button:hover {
+  border-color: #ff682e;
+  background: #33251f;
+}
+.at-status-action-grid button.active {
+  border-color: #ff712d;
+  background: #40281f;
+}
+.at-status-panel {
+  margin-top: 17px;
+}
+.at-status-panel label {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 13px;
+}
+.at-status-panel input {
+  width: 92px;
+  padding: 8px 10px;
+  border: 1px solid #544a50;
+  border-radius: 7px;
+  color: #fff;
+  background: #141316;
+}
+.at-status-panel-actions {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+@media (max-width: 900px) {
+  .at-profile-header {
+    gap: 12px;
+  }
+  .at-profile-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 560px) {
+  .at-profile-cover {
+    height: 175px;
+  }
+  .at-profile-avatar {
+    width: 88px;
+    height: 88px;
+    font-size: 27px;
+  }
+  .at-profile-person {
+    padding-top: 8px;
+  }
+  .at-profile-actions {
+    padding-top: 0;
+    margin-left: 0;
+    width: 100%;
+  }
+  .at-profile-fields {
+    grid-template-columns: 1fr;
+  }
+  .at-profile-stats > div {
+    padding: 13px;
+  }
+  .at-profile-stats strong {
+    font-size: 24px;
+  }
+  .at-profile-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+  }
+  .at-profile-card-controls button {
+    font-size: 10px;
+  }
+}
 
-.at-avatar-img, .at-profile-avatar img { width: 100%; height: 100%; display: block; object-fit: cover; border-radius: 50%; }
-.at-profile-edit input[type=file] { padding: 12px; border: 1px dashed #5d4b42; background: #191417; border-radius: 8px; max-width: 100%; color: #ddd; }
-.at-profile-edit label > small { color: #aaa5ad; font-weight: 450; }
+.at-avatar-img,
+.at-profile-avatar img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  border-radius: 50%;
+}
+.at-profile-edit input[type="file"] {
+  padding: 12px;
+  border: 1px dashed #5d4b42;
+  background: #191417;
+  border-radius: 8px;
+  max-width: 100%;
+  color: #ddd;
+}
+.at-profile-edit label > small {
+  color: #aaa5ad;
+  font-weight: 450;
+}
 
 /* Personalização de capa de perfil */
-.at-profile-cover { background-size: cover; background-position: center; }
-.at-profile-cover--custom::after { content: none; }
-.at-cover-edit-shortcut { z-index: 2; position: absolute; right: 15px; bottom: 15px; border: 1px solid #ffffff6b; border-radius: 9px; padding: 8px 12px; background: #0c0a0dbb; color: #fff; font-size: 12px; backdrop-filter: blur(7px); }
-.at-cover-edit-shortcut:hover { border-color: #ff783a; background: #2c1b17ea; }
-.at-banner-settings { display: grid; gap: 12px; padding: 15px; border: 1px solid #3b3330; border-radius: 10px; background: #211c1b; }
-.at-banner-settings input[type=range] { min-height: 20px; width: 100%; padding: 0; accent-color: #ff682e; }
-.at-banner-settings .at-remove-banner { justify-self: start; }
+.at-profile-cover {
+  background-size: cover;
+  background-position: center;
+}
+.at-profile-cover--custom::after {
+  content: none;
+}
+.at-cover-edit-shortcut {
+  z-index: 2;
+  position: absolute;
+  right: 15px;
+  bottom: 15px;
+  border: 1px solid #ffffff6b;
+  border-radius: 9px;
+  padding: 8px 12px;
+  background: #0c0a0dbb;
+  color: #fff;
+  font-size: 12px;
+  backdrop-filter: blur(7px);
+}
+.at-cover-edit-shortcut:hover {
+  border-color: #ff783a;
+  background: #2c1b17ea;
+}
+.at-banner-settings {
+  display: grid;
+  gap: 12px;
+  padding: 15px;
+  border: 1px solid #3b3330;
+  border-radius: 10px;
+  background: #211c1b;
+}
+.at-banner-settings input[type="range"] {
+  min-height: 20px;
+  width: 100%;
+  padding: 0;
+  accent-color: #ff682e;
+}
+.at-banner-settings .at-remove-banner {
+  justify-self: start;
+}
 
-.at-profile-poster-button { display: block; width: 100%; padding: 0; border: 0; cursor: pointer; text-align: left; }
-.at-profile-poster-button:hover img { transform: scale(1.04); }
-.at-profile-poster-button img { transition: transform .25s ease; }
-.at-profile-title-link { border: 0; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; padding: 0; }
-.at-profile-title-link:hover { color: #ff9c6d; }
+.at-profile-poster-button {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  cursor: pointer;
+  text-align: left;
+}
+.at-profile-poster-button:hover img {
+  transform: scale(1.04);
+}
+.at-profile-poster-button img {
+  transition: transform 0.25s ease;
+}
+.at-profile-title-link {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  padding: 0;
+}
+.at-profile-title-link:hover {
+  color: #ff9c6d;
+}
 
 /* Etapa 7: indicador de aba com layout spring (Motion para React). */
-.at-profile-tabs button { position: relative; }
-.at-profile-tabs button.active { border-bottom-color: transparent; }
-.at-profile-tabs button .at-profile-tab-line {
-  display: block; position: absolute; height: 3px;
-  bottom: -3px; left: 0; right: 0;
-  margin: 0; padding: 0; border: none; border-radius: 5px;
-  background: #ff6a30; pointer-events: none;
+.at-profile-tabs button {
+  position: relative;
 }
-.at-profile-card { will-change: transform; }
-@media (prefers-reduced-motion: reduce) { .at-profile-card { will-change: auto; } }
+.at-profile-tabs button.active {
+  border-bottom-color: transparent;
+}
+.at-profile-tabs button .at-profile-tab-line {
+  display: block;
+  position: absolute;
+  height: 3px;
+  bottom: -3px;
+  left: 0;
+  right: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 5px;
+  background: #ff6a30;
+  pointer-events: none;
+}
+.at-profile-card {
+  will-change: transform;
+}
+@media (prefers-reduced-motion: reduce) {
+  .at-profile-card {
+    will-change: auto;
+  }
+}
 
 /* Etapa 8 — foto de perfil sempre recortada dentro de uma moldura circular. */
-.at-profile-header { z-index: 2; }
+.at-profile-header {
+  z-index: 2;
+}
 .at-profile-avatar {
-  width: 116px !important; height: 116px !important; min-width: 116px; min-height: 116px;
-  max-width: 116px; max-height: 116px; flex: 0 0 116px !important;
-  border-radius: 50% !important; box-sizing: border-box;
-  overflow: hidden !important; isolation: isolate;
-  padding: 0; line-height: 1;
+  width: 116px !important;
+  height: 116px !important;
+  min-width: 116px;
+  min-height: 116px;
+  max-width: 116px;
+  max-height: 116px;
+  flex: 0 0 116px !important;
+  border-radius: 50% !important;
+  box-sizing: border-box;
+  overflow: hidden !important;
+  isolation: isolate;
+  padding: 0;
+  line-height: 1;
 }
 .at-profile-avatar img {
-  display: block !important; width: 100% !important; height: 100% !important;
-  min-width: 0 !important; min-height: 0 !important; max-width: 100% !important; max-height: 100% !important;
-  object-fit: cover !important; object-position: center center;
-  border-radius: 50%; overflow: hidden;
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  object-fit: cover !important;
+  object-position: center center;
+  border-radius: 50%;
+  overflow: hidden;
 }
-.at-avatar-btn { box-sizing: border-box; flex: 0 0 39px; min-width: 39px; max-width: 39px; overflow: hidden !important; }
-.at-avatar-img { width: 100% !important; height: 100% !important; max-width: 100% !important; max-height: 100% !important; object-fit: cover !important; }
+.at-avatar-btn {
+  box-sizing: border-box;
+  flex: 0 0 39px;
+  min-width: 39px;
+  max-width: 39px;
+  overflow: hidden !important;
+}
+.at-avatar-img {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  object-fit: cover !important;
+}
 @media (max-width: 560px) {
-  .at-profile-avatar { width: 88px !important; height: 88px !important; min-width: 88px; min-height: 88px; max-width: 88px; max-height: 88px; flex-basis: 88px !important; }
+  .at-profile-avatar {
+    width: 88px !important;
+    height: 88px !important;
+    min-width: 88px;
+    min-height: 88px;
+    max-width: 88px;
+    max-height: 88px;
+    flex-basis: 88px !important;
+  }
 }
 
-.at-profile-avatar img { position: absolute; inset: 0; }
+.at-profile-avatar img {
+  position: absolute;
+  inset: 0;
+}
